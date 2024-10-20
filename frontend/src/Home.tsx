@@ -1,9 +1,9 @@
-// src/Home.js
+// src/Home.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css'; // Optional: For styling
 
-function Home() {
+const Home: React.FC = () => {
   return (
     <div className="home-container">
       <header className="hero">
@@ -29,6 +29,6 @@ function Home() {
       </footer>
     </div>
   );
-}
+};
 
 export default Home;
