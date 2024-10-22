@@ -1,4 +1,5 @@
 import { sign, verify } from 'jsonwebtoken';
+import type { JwtPayload } from 'jsonwebtoken';
 import { hash, compare } from 'bcrypt';
 
 const secret = 'secret'; // TODO: Replace with a path to a secret key
@@ -8,16 +9,22 @@ async function generateToken(username: string): Promise<string> {
   const payload = {
     username: username
   };
-  return await sign(payload, secret, { expiresIn: '1h' });
+  return sign(payload, secret, { expiresIn: '1h' });
 }
 
 async function verifyToken(token: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    verify(token, secret, (err, decoded) => {
+    verify(token, secret, (err: Error | null, decoded: string | JwtPayload | undefined) => {
       if (err) {
         reject(new Error('Invalid token'));
       } else {
-        resolve(decoded.username);
+        if (typeof decoded === 'string') {
+          resolve(decoded);
+        } else if (typeof decoded !== 'undefined') {
+          resolve(decoded.username);
+        } else {
+          reject(new Error('Invalid token'));
+        }
       }
     });
   });
