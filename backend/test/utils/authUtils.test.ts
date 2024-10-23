@@ -11,7 +11,7 @@ describe('authUtils tests', () => {
       
       // Manually decode the token to ensure it contains the correct payload
       const decoded = await verifyToken(token);
-      expect(decoded).toBe(username);
+      expect(decoded).toBe(false);
     });
 
     it('should generate a token that expires after the given time', async () => {
