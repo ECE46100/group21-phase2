@@ -11,6 +11,7 @@ interface UserPerms {
 
 class UserService {
   public async createUser(user: UserCreationAttributes): Promise<boolean> {
+    /* TODO: Check for "strong" password */
     const hashedPassword = await auth.hashPassword(user.password);
     user.password = hashedPassword;
     try {

@@ -76,4 +76,6 @@ User.init({
   timestamps: true
 });
 
+/* TODO: create default user (if they don't exist */
+
 export { User, UserAttributes, UserCreationAttributes };

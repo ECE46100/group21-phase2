@@ -9,6 +9,7 @@ interface VersionAttributes {
   author: string;
   accessLevel: string;
   programPath: string;
+  packageUrl: string;
 }
 
 interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
@@ -22,6 +23,7 @@ class Version extends Model<VersionAttributes, VersionCreationAttributes> implem
   public accessLevel!: string;
   public timestamp!: Date;
   public programPath!: string;
+  public packageUrl!: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -56,6 +58,10 @@ Version.init({
   programPath: {
     type: new DataTypes.STRING(128),
     allowNull: true
+  },
+  packageUrl: {
+    type: new DataTypes.STRING(128),
+    allowNull: true
   }
 }, {
   sequelize,
@@ -63,4 +69,4 @@ Version.init({
   timestamps: true
 });
 
-export default Version;
+export { Version, VersionAttributes, VersionCreationAttributes };

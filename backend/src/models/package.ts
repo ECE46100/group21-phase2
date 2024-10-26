@@ -4,7 +4,6 @@ import sequelize from '../db';
 interface PackageAttributes {
   ID?: number;
   name: string;
-  version: string;
 }
 
 interface PackageCreationAttributes extends Omit<PackageAttributes, 'ID'> {}
@@ -12,7 +11,6 @@ interface PackageCreationAttributes extends Omit<PackageAttributes, 'ID'> {}
 class Package extends Model<PackageAttributes, PackageCreationAttributes> implements PackageAttributes {
   public ID!: number;
   public name!: string;
-  public version!: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -26,16 +24,13 @@ Package.init({
   },
   name: {
     type: new DataTypes.STRING(128),
+    unique: true,
     allowNull: false
   },
-  version: {
-    type: new DataTypes.STRING(128),
-    allowNull: false
-  }
 }, {
   sequelize,
   tableName: 'packages',
   timestamps: true
 });
 
-export default Package;
+export { Package, PackageAttributes, PackageCreationAttributes };
