@@ -1,11 +1,10 @@
-// src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from './Home';
-import UploadPage from './UploadPage';
-import UpdatePage from './UpdatePage';
-import RatingPage from './RatingPage';
-import DownloadPage from './DownloadPage';
+import Home from './pages/home';
+import UploadPage from './pages/upload';
+import UpdatePage from './pages/update';
+import RatingPage from './pages/rating';
+import DownloadPage from './pages/download';
 
 const App: React.FC = () => {
   return (
