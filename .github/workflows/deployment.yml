@@ -70,12 +70,13 @@ jobs:
             sudo npm install -g pm2
           
             # Check if the app.zip file exists
-            echo "Checking if app.zip exists..."
+            echo "Checking if app.zip exists in /home/$EC2_USER..."
             if [ -f /home/$EC2_USER/app.zip ]; then
-              echo "Unzipping app.zip..."
-              unzip -o /home/$EC2_USER/app.zip -d app
+              echo "app.zip found in /home/$EC2_USER. Unzipping..."
+              # Unzip to the 'app' directory
+              unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app
             else
-              echo "app.zip not found!"
+              echo "app.zip not found in /home/$EC2_USER!"
               exit 1
             fi
           
