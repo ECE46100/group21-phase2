@@ -26,7 +26,7 @@ jobs:
 
       # Step 4: Build the application (optional)
     #  - name: Build the application
-    #    run: npm run build
+    #    run: npm run build2kejbx
 
       - name: Test SSH connection
         run: |
