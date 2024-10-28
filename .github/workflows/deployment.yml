@@ -24,25 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # Step 4: Build the application (optional)
-    #  - name: Build the application
-    #    run: npm run build2kejbx
-    
       # Step 5: Package the application
       - name: Package application files
         run: zip -r app.zip .  # Compress the files into a zip file
 
-      # Step 6: Upload to S3 (optional for storing build artifacts)
-#      - name: Upload to S3
- #       env:
-  #        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-   #       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    #    run: |
-     #     aws s3 cp app.zip s3://461group21bucket/app.zip --region us-east-2
-      
-      # Step to create the key file
-     # - name: Create EC2 key file
-      #  run: echo "${{ secrets.EC2_KEY }}" > /tmp/key.pem && chmod 600 /tmp/key.pem
       # Step 6: Upload to S3 (optional for storing build artifacts)
       - name: Upload to S3
         env:
@@ -54,8 +39,9 @@ jobs:
             echo "S3 upload failed"
             exit 1
           fi
+          echo "S3 upload succeeded"
 
-        # Step 7: Deploy to EC2 via SSH
+      # Step 7: Deploy to EC2 via SSH
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -67,22 +53,24 @@ jobs:
       
           # Transfer the zip file to the EC2 instance
           scp -i /tmp/key.pem -o "StrictHostKeyChecking=no" app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
+          if [ $? -ne 0 ]; then
+            echo "File transfer failed"
+            exit 1
+          fi
+          echo "File transfer succeeded"
 
-          # Check if the file exists
+          # Check if the file exists on EC2
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST "ls -l /home/$EC2_USER/app.zip"
-
+          
           # SSH into the EC2 instance and deploy the app
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST << 'EOF'
             # Install Node.js 20.18.0
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-            sudo yum install -y nodejs-20.18.0 unzip
+            sudo yum install -y nodejs unzip
             sudo npm install -g pm2
           
             # Check if the app.zip file exists
             echo "Checking if app.zip exists..."
-            ls -l /home/$EC2_USER/app.zip
-          
-            # Unzip the application package using the full path
             if [ -f /home/$EC2_USER/app.zip ]; then
               echo "Unzipping app.zip..."
               unzip -o /home/$EC2_USER/app.zip -d app
@@ -100,6 +88,3 @@ jobs:
             # Optionally, use pm2 or a similar process manager to run your app
             pm2 start index.js --name my-app || pm2 restart my-app
           EOF
-
-
-
