@@ -77,13 +77,16 @@ jobs:
             fi
       
             ls -l /home/$EC2_USER/app
+
+            echo "try backend"
+            ls -l /home/$EC2_USER/app/backend
+            echo "done"
             
             # Navigate to the app directory
             cd /home/$EC2_USER/app || exit 1
 
             # Install dependencies and start the application
             npm install
-            ls -l /app
 
             # Use pm2 to run or restart the app
             pm2 start backend/src/dist/server.js --name my-app || pm2 restart my-app --update-env
