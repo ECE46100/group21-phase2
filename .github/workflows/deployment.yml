@@ -41,7 +41,6 @@ jobs:
           fi
           echo "S3 upload succeeded"
 
-      # Step 7: Deploy to EC2 via SSH
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -58,34 +57,33 @@ jobs:
             exit 1
           fi
           echo "File transfer succeeded"
-
-          # Check if the file exists on EC2
+      
+          # Check if the file exists directly on EC2
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST "ls -l /home/$EC2_USER/app.zip"
-          
+      
           # SSH into the EC2 instance and deploy the app
-          ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST << 'EOF'
+          ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST << EOF
             # Install Node.js 20.18.0
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
             sudo yum install -y nodejs unzip
             sudo npm install -g pm2
-          
-            # Check if the app.zip file exists
-            echo "Checking if app.zip exists in /home/$EC2_USER..."
-            if [ -f /home/$EC2_USER/app.zip ]; then
+      
+            # Explicit path check for app.zip
+            if [ -f "/home/$EC2_USER/app.zip" ]; then
               echo "app.zip found in /home/$EC2_USER. Unzipping..."
-              # Unzip to the 'app' directory
               unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app
             else
               echo "app.zip not found in /home/$EC2_USER!"
               exit 1
             fi
-          
+      
             # Navigate to the app directory
-            cd app || exit 1  # Ensure that we fail if 'cd' fails
-          
+            cd /home/$EC2_USER/app || exit 1
+      
             # Install dependencies and start the application
             npm install
-          
-            # Optionally, use pm2 or a similar process manager to run your app
+            
+            # Use pm2 to run or restart the app
             pm2 start index.js --name my-app || pm2 restart my-app
           EOF
+      
