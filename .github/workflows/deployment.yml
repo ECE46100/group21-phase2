@@ -81,7 +81,7 @@ jobs:
             # Navigate to the app directory
             cd /home/$EC2_USER/app || exit 1
                   # List files in the backend directory to check server.js location
-            echo "Listing contents of /home/$EC2_USER/app/backend/src/dist:"
+  
             ls -l backend/dist
             
             # Install dependencies and start the application
