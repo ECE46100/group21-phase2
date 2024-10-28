@@ -88,11 +88,11 @@ jobs:
             npm install
           
             # Use pm2 to run or restart the app
-            echo "Starting the application..."
-            pm2 start server.js --name my-app || pm2 restart my-app --update-env
-          
+           # echo "Starting the application..."
+            #pm2 start server.js --name my-app || pm2 restart my-app --update-env
+            node server.js
             # Check PM2 process status
-            pm2 list
-            pm2 logs my-app
+            #pm2 list
+            #pm2 logs my-app
           EOF
 
