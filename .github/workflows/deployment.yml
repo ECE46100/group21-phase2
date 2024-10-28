@@ -66,27 +66,33 @@ jobs:
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
             sudo yum install -y nodejs unzip
             sudo npm install -g pm2
-
-            # Explicit path check for app.zip
+          
+            # Check if app.zip exists and unzip
             if [ -f "/home/$EC2_USER/app.zip" ]; then
-              echo "app.zip found in /home/$EC2_USER. Unzipping..."
+              echo "app.zip found. Unzipping..."
               unzip -o /home/$EC2_USER/app.zip -d /home/$EC2_USER/app
             else
-              echo "app.zip not found in /home/$EC2_USER!"
+              echo "app.zip not found!"
               exit 1
             fi
-      
-            ls -l /home/$EC2_USER/app
+          
+            # Navigate to the backend/dist directory
+            cd /home/$EC2_USER/app/backend/dist || exit 1
             
-            # Navigate to the app directory
-            cd /home/$EC2_USER/app || exit 1
-                  # List files in the backend directory to check server.js location
-  
-            ls -l backend/dist
-            
-            # Install dependencies and start the application
+            # List files to confirm presence of server.js
+            echo "Listing contents of backend/dist directory:"
+            ls -l
+          
+            # Install dependencies
+            echo "Installing dependencies..."
             npm install
-
+          
             # Use pm2 to run or restart the app
-            pm2 start ../backend/dist/server.js --name my-app || pm2 restart my-app --update-env
+            echo "Starting the application..."
+            pm2 start server.js --name my-app || pm2 restart my-app --update-env
+          
+            # Check PM2 process status
+            pm2 list
+            pm2 logs my-app
           EOF
+
