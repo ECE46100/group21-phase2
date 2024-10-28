@@ -67,7 +67,10 @@ jobs:
       
           # Transfer the zip file to the EC2 instance
           scp -i /tmp/key.pem -o "StrictHostKeyChecking=no" app.zip $EC2_USER@$EC2_HOST:/home/$EC2_USER/app.zip
-          
+
+          # Check if the file exists
+          ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST "ls -l /home/$EC2_USER/app.zip"
+
           # SSH into the EC2 instance and deploy the app
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST << 'EOF'
             # Navigate to the application directory
