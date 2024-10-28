@@ -25,8 +25,8 @@ jobs:
         run: npm install
 
       # Step 4: Build the application (optional)
-      - name: Build the application
-        run: npm run build
+    #  - name: Build the application
+    #    run: npm run build
 
       # Step 5: Package the application
       - name: Package application files
