@@ -24,6 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+        # Step 4: Compile TypeScript files
+      - name: Compile TypeScript files
+        run: npx tsc --project backend/tsconfig.json
+
       # Step 5: Package the application
       - name: Package application files
         run: zip -r app.zip .  # Compress the files into a zip file
@@ -84,6 +88,6 @@ jobs:
             npm install
             
             # Use pm2 to run or restart the app
-            pm2 start server.js --name my-app || pm2 restart my-app --update-env
+            pm2 start backend/src/dist/server.js --name my-app || pm2 restart my-app --update-env
           EOF
       
