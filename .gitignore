@@ -9,4 +9,4 @@
 /backend/unzipped
 /backend/conversion
 /backend/coverage
-/backend/logs
+backend/logs/app.log
