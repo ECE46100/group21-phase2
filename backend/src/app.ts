@@ -1,10 +1,15 @@
 import { Router, Request, Response } from 'express';
 import authenticate from './controllers/authenticate';
+import searchPackages from './controllers/searchPackages';
+import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 const router = Router();
 
-router.post('/packages', (req: Request, res: Response) => {
-  const page = req.query.page || 1;
-  // TODO: Implement the logic to fetch the packages from the database
+router.post('/packages', authMiddleware, permMiddleware, async (req: any, res: any) => {
+  if (!req.middleWareData.permissions.searchPerm && !req.middleWareData.permissions.adminPerm) {
+    res.status(403).send('Unauthorized - missing permissions');
+    return;
+  }
+  return await searchPackages(req, res);
 });
 
 router.delete('/reset', (req: Request, res: Response) => {
@@ -51,3 +56,5 @@ router.post('/package/byRegEx', (req: Request, res: Response) => {
 router.get('/track', (req: Request, res: Response) => {
   // TODO: Implement the logic to return the track
 });
+
+export default router;

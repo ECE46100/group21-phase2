@@ -4,9 +4,20 @@ import { Version } from '../models/version';
 import type { PackageAttributes, PackageCreationAttributes } from '../models/package';
 import type { VersionAttributes, VersionCreationAttributes } from '../models/version';
 
-import { satisfies } from 'semver';
+import { satisfies, coerce } from 'semver';
 
-export default class PackageService {
+export interface PackageSearchResult {
+  Version: string,
+  ID: string,
+  Name: string,
+}
+
+export interface PackageQuery {
+  Version: string,
+  Name: string,
+}
+
+class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
     const packageObj = await Package.findOne({ where: { name: packageName } });
     return packageObj ? packageObj.ID : null;
@@ -16,48 +27,62 @@ export default class PackageService {
     return await Version.findByPk(versionID);
   }
 
-  public async getPackagesBySemver(packageNames: string[], semver: string, queryOffset: number, semverOffset: number): Promise<[number, number, Version[]]> {
+  public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
+    const queryMetadata = new Map<number, PackageQuery>();
+    
+    for (const query of packageQueries) {
+      const packageID = await this.getPackageID(query.Name);
+      if (packageID === null) {
+        continue;
+      }
+      queryMetadata.set(packageID, query);
+    }
+
+    const packageIDs = Array.from(queryMetadata.keys());
+
     const query = {
-      attributes: ['version', 'ID'],
       offset: 50 * queryOffset,
       limit: 50,
-      where: { packageID: packageNames },
-      order: ['version', 'ASC']
+      order: [['createdAt', 'ASC']] as [string, string][]
     }
     
-    if (packageNames[0] !== "*") {
-      query.where = { packageID: packageNames };
+    if (packageQueries[0].Name !== "*") {
+      (query as any).where = { packageID: packageIDs };
     }
 
     let matchingPackagesCount = 0;
-    const result : [number, number, Version[]] = [queryOffset, semverOffset, []];
+    const result : [number, number, PackageSearchResult[]] = [queryOffset, semverOffset, []];
 
     while (matchingPackagesCount < 50) {
       const versions = await Version.findAndCountAll(query);
-      if (versions.count === 0) {
+      console.log(versions);
+
+      if (versions.count === 0 || versions.rows.length === 0) {
         result[0] = -1;
         result[1] = -1;
         return result;
       }
 
       for (const version of versions.rows) {
-        if (satisfies(version.version, semver)) {
-          if (result[0] === queryOffset) {
-            if (result[1] >= semverOffset) {
-              result[2].push(version);
-              matchingPackagesCount++;
-            }
-            result[1]++;
-          } else {
-            result[2].push(version);
+        const semVer = packageQueries[0].Name !== "*" ? queryMetadata.get(version.packageID)?.Version : packageQueries[0].Version;
+        if (semVer) {
+          console.log(coerce(version.version), semVer, satisfies(version.version, semVer));
+        }
+        if (semVer && satisfies(version.version, semVer)) {
+          if (result[0] !== queryOffset || result[1] >= semverOffset) {
+            result[2].push({
+              Version: version.version,
+              ID: version.ID.toString(),
+              Name: (await Package.findByPk(version.packageID))?.name || "Unknown"
+            });
             matchingPackagesCount++;
           }
+          result[1]++;
         }
         if (matchingPackagesCount === 50) {
           return result;
         }
       }
-
       query.offset += 50;
       result[0]++;
       result[1] = 0;
@@ -79,7 +104,7 @@ export default class PackageService {
     if (await Version.findOne({ where: { version: versionObj.version, packageID: versionObj.packageID } })) {
       return false;
     }
-    
+
     try {
       await Version.create(versionObj);
       return true;
@@ -88,3 +113,5 @@ export default class PackageService {
     }
   }
 }
+
+export default new PackageService();

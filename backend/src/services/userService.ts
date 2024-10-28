@@ -52,23 +52,23 @@ class UserService {
     return await auth.generateToken(username);
   }
 
-  public async verifyToken(token: string): Promise<boolean> {
+  public async verifyToken(token: string): Promise<string | null> {
     try {
       const username = await auth.verifyToken(token);
       const user = await this.getUser(username);
       if (user) {
         if (user.tokenUses > 0) {
           await User.update({ tokenUses: user.tokenUses - 1 }, { where: { ID: user.ID } }); // TODO: Potential Race Condition
-          return true;
+          return username;
         } else {
-          return false;
+          return null;
         }
       }
     }
     catch (err) {
-      return false;
+      return null;
     }
-    return false;
+    return null;
   }
 
   public async getUserGroup(username: string): Promise<string | null> {

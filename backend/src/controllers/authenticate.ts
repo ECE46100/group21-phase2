@@ -19,7 +19,7 @@ function isUserAuthenticationSchema(user: any): user is UserAuthenticationSchema
 }
 
 async function authenticate(req: Request, res: Response) {
-  const { user, secret } = req.body;
+  const { User: user, Secret: secret } = req.body;
   if (!isUserSchema(user) || !isUserAuthenticationSchema(secret)) {
     res.status(400).send('Invalid request');
     return;
