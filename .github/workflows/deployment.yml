@@ -81,11 +81,9 @@ jobs:
             # Navigate to the app directory
             cd /home/$EC2_USER/app || exit 1
 
-            ls -l backend
-
             # Install dependencies and start the application
             npm install
 
             # Use pm2 to run or restart the app
-            pm2 start ../server.js --name my-app || pm2 restart my-app --update-env
+            pm2 start ../backend/dist/server.js --name my-app || pm2 restart my-app --update-env
           EOF
