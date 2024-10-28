@@ -77,13 +77,11 @@ jobs:
             fi
       
             ls -l /home/$EC2_USER/app
-
-            echo "try backend"
-            ls -l /home/$EC2_USER/app/backend
-            echo "done"
             
             # Navigate to the app directory
             cd /home/$EC2_USER/app || exit 1
+
+            ls -l
 
             # Install dependencies and start the application
             npm install
