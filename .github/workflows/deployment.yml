@@ -79,7 +79,7 @@ jobs:
             ls -l /home/$EC2_USER/app
 
             echo "try backend"
-            ls -l /home/$EC2_USER/app
+            ls -l /home/$EC2_USER/app/backend
             echo "done"
             
             # Navigate to the app directory
