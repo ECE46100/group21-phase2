@@ -33,16 +33,27 @@ jobs:
         run: zip -r app.zip .  # Compress the files into a zip file
 
       # Step 6: Upload to S3 (optional for storing build artifacts)
+#      - name: Upload to S3
+ #       env:
+  #        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+   #       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #    run: |
+     #     aws s3 cp app.zip s3://461group21bucket/app.zip --region us-east-2
+      
+      # Step to create the key file
+     # - name: Create EC2 key file
+      #  run: echo "${{ secrets.EC2_KEY }}" > /tmp/key.pem && chmod 600 /tmp/key.pem
+      # Step 6: Upload to S3 (optional for storing build artifacts)
       - name: Upload to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           aws s3 cp app.zip s3://461group21bucket/app.zip --region us-east-2
-      
-      # Step to create the key file
-     # - name: Create EC2 key file
-      #  run: echo "${{ secrets.EC2_KEY }}" > /tmp/key.pem && chmod 600 /tmp/key.pem
+          if [ $? -ne 0 ]; then
+            echo "S3 upload failed"
+            exit 1
+          fi
 
         # Step 7: Deploy to EC2 via SSH
       - name: Deploy to EC2
