@@ -81,7 +81,7 @@ jobs:
             # Navigate to the app directory
             cd /home/$EC2_USER/app || exit 1
 
-            ls -l
+            ls -l backend
 
             # Install dependencies and start the application
             npm install
