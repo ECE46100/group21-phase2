@@ -84,8 +84,6 @@ jobs:
       
             # Install dependencies and start the application
             npm install
-
-            ls -l /app
             
             # Use pm2 to run or restart the app
             pm2 start backend/src/dist/server.js --name my-app || pm2 restart my-app --update-env
