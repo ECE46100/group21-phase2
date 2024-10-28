@@ -71,15 +71,25 @@ jobs:
           # Check if the file exists
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST "ls -l /home/$EC2_USER/app.zip"
 
+          # SSH into the EC2 instance and deploy the app
           ssh -i /tmp/key.pem -o "StrictHostKeyChecking=no" $EC2_USER@$EC2_HOST << 'EOF'
-            # Install Node.js and PM2 (if not already installed)
+            # Install Node.js 20.18.0
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+            sudo yum install -y nodejs-20.18.0 unzip
             sudo npm install -g pm2
           
-            # Navigate to the application directory
-            cd /home/$EC2_USER
+            # Check if the app.zip file exists
+            echo "Checking if app.zip exists..."
+            ls -l /home/$EC2_USER/app.zip
           
             # Unzip the application package using the full path
-            unzip -o /home/$EC2_USER/app.zip -d app
+            if [ -f /home/$EC2_USER/app.zip ]; then
+              echo "Unzipping app.zip..."
+              unzip -o /home/$EC2_USER/app.zip -d app
+            else
+              echo "app.zip not found!"
+              exit 1
+            fi
           
             # Navigate to the app directory
             cd app || exit 1  # Ensure that we fail if 'cd' fails
@@ -90,5 +100,6 @@ jobs:
             # Optionally, use pm2 or a similar process manager to run your app
             pm2 start index.js --name my-app || pm2 restart my-app
           EOF
+
 
 
