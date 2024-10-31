@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Login from './login';
 import './home.css'; // Optional: For styling
 
 const Home: React.FC = () => {
   return (
     <div className="home-container">
       <header className="hero">
-        <h1>Cool Website</h1>
-        <p>ECE@Purdue's course in Software Engineering, offered by the inimitable Prof. James C. Davis and his colorful cast of quirky teaching assistants.</p>
+        <h1>Home</h1>
       </header>
 
       <nav className="nav-links">
@@ -18,6 +18,8 @@ const Home: React.FC = () => {
           <li><Link to="/download">Download</Link></li>
         </ul>
       </nav>
+
+      <Login /> {/* Use the login component here */}
 
       <section className="Our goals">
 

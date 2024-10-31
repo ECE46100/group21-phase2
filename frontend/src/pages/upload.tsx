@@ -1,11 +1,11 @@
 import React from 'react';
+import PageLayout from './pageLayout';
 
 const UploadPage: React.FC = () => {
   return (
-    <div>
-      <h1>Upload Page</h1>
-      <p>This is the upload page. You can upload files here.</p>
-    </div>
+    <PageLayout title="Upload">
+      <p>This is the Upload page. Upload your files here.</p>
+    </PageLayout>
   );
 };
 
