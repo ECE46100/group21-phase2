@@ -1,0 +1,48 @@
+.page-container {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+    position: relative;
+  }
+  
+  .hero {
+    background-color: #282c34;
+    color: white;
+    padding: 50px;
+    margin-bottom: 30px;
+    border-radius: 10px;
+    position: relative;
+  }
+  
+  .hero h1 {
+    font-size: 2.5rem;
+    margin: 0;
+  }
+  
+  .back-button-container {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .back-button {
+    text-decoration: none;
+    color: #61dafb;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+  
+  .back-button:hover {
+    color: #21a1f1;
+  }
+  
+  .content {
+    margin-top: 20px;
+  }
+  
+  .footer {
+    margin-top: 30px;
+    color: #777;
+  }
+  

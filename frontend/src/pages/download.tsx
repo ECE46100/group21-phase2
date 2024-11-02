@@ -1,11 +1,11 @@
 import React from 'react';
+import PageLayout from './pageLayout';
 
 const DownloadPage: React.FC = () => {
   return (
-    <div>
-      <h1>Download Page</h1>
-      <p>This is the download page. Download files here.</p>
-    </div>
+    <PageLayout title="Download">
+      <p>This is the Download page. Download files here.</p>
+    </PageLayout>
   );
 };
 
