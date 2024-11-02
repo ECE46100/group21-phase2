@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Login from './login';
-import './home.css'; // Optional: For styling
+import Login from '../components/login';
+import '../assets/css/home.css'; // Optional: For styling
 
 const Home: React.FC = () => {
   return (

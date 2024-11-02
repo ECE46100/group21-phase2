@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './pageLayout.css'; // Shared CSS for all pages
+import '../assets/css/pageLayout.css'; // Shared CSS for all pages
 
 interface PageLayoutProps {
   title: string;

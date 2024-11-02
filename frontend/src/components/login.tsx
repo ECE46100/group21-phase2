@@ -1,6 +1,6 @@
 // src/login.tsx
 import React, { useState } from 'react';
-import './login.css'; // Optional: For styling
+import '../assets/css/login.css'; // Optional: For styling
 
 interface AuthForm {
   username: string;
