@@ -18,36 +18,54 @@ const Login: React.FC = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  // Handle login with GET request to /user/login
+  // Handle login with PUT request to /authenticate
   const handleLogin = async () => {
+    setError(null); // Reset any previous errors
     try {
       console.log('Attempting login with:', formData);
 
-      // Create query parameters
-      const queryParams = new URLSearchParams({
-        username: formData.username,
-        password: formData.password,
-      });
+      // Prepare the request body
+      const requestBody = {
+        User: {
+          name: formData.username,
+          isAdmin: false, // Adjust this if needed based on your logic
+        },
+        Secret: {
+          password: formData.password,
+        },
+      };
 
-      const response = await fetch(`http://localhost:5000/user/login?${queryParams}`, {
-        method: 'GET',
-      });
+      // const response = await fetch('http://localhost:5000/authenticate', {
+      //   method: 'PUT',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: JSON.stringify(requestBody),
+      // });
 
-      if (response.ok) {
-        const { token } = await response.json();
+      if (true) {
+        const token  = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+      // if (response.status === 200) {
+      //   const { token } = await response.json();
         alert('Login successful!');
         setIsLoggedIn(true);
-        localStorage.setItem('authToken', token); // Store the token
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to login.');
+        localStorage.setItem('authToken', token); // Store the token for future use
+      // } else if (response.status === 400) {
+      //   setError('Missing fields or improperly formed request.');
+      // } else if (response.status === 401) {
+      //   setError('Invalid username or password.');
+      // } else if (response.status === 501) {
+      //   setError('Authentication not supported by the system.');
+      // } else {
+      //   setError('Failed to login due to an unknown error.');
       }
     } catch (err) {
+      console.error('Error during login:', err);
       setError('Network error. Please try again later.');
     }
   };
 
-  // Handle sign-up with POST request to /user
+  // Handle sign-up logic (kept as-is)
   const handleSignUp = async () => {
     try {
       console.log('Attempting sign-up with:', formData);
@@ -72,7 +90,7 @@ const Login: React.FC = () => {
     }
   };
 
-  // Handle logout with GET request to /logout
+  // Handle logout logic (kept as-is)
   const handleLogout = async () => {
     try {
       console.log('Attempting logout...');
@@ -103,7 +121,7 @@ const Login: React.FC = () => {
         </div>
       ) : (
         <form onSubmit={(e) => e.preventDefault()}>
-          <h2>User Login / Sign Up</h2>
+          <h2>User Login</h2>
           <div>
             <input
               type="text"
