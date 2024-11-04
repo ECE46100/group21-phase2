@@ -32,15 +32,14 @@ describe('UserService', () => {
 
       expect(auth.hashPassword).toHaveBeenCalledWith('plaintextpassword');
       expect(User.create).toHaveBeenCalledWith(expectedUser);
-      expect(result).toBe(true);
+      expect(result).toBe(undefined);
     });
 
-    it('should return false if User.create throws an error', async () => {
+    it('should throw an error if user does not exist', async () => {
       jest.spyOn(auth, 'hashPassword').mockResolvedValue('hashedpassword');
       jest.spyOn(User, 'create').mockRejectedValue(new Error('DB Error'));
 
-      const result = await UserService.createUser(mockUser);
-      expect(result).toBe(false);
+      await expect(UserService.createUser(mockUser)).rejects.toThrow(new Error('Failed to create user: Error: DB Error'));
     });
   });
 
@@ -54,14 +53,13 @@ describe('UserService', () => {
       const result = await UserService.deleteUser('testUser');
       expect(UserService.getUser).toHaveBeenCalledWith('testUser');
       expect(User.destroy).toHaveBeenCalledWith({ where: { ID: 1 } });
-      expect(result).toBe(true);
+      expect(result).toBe(undefined);
     });
 
-    it('should return false if the user does not exist', async () => {
+    it('should throw an error if the user does not exist', async () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      const result = await UserService.deleteUser('testUser');
-      expect(result).toBe(false);
+      await expect(UserService.deleteUser('testUser')).rejects.toThrow(new Error('User not found'));
     });
   });
 
@@ -81,8 +79,7 @@ describe('UserService', () => {
     it('should return false if the username does not exist', async () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      const result = await UserService.verifyUser('testUser', 'plaintextpassword');
-      expect(result).toBe(false);
+      expect(await UserService.verifyUser('testUser', 'plaintextpassword')).toBe(false);
     });
 
     it('should return false if the password is incorrect', async () => {
@@ -91,8 +88,7 @@ describe('UserService', () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(mockUserVerify);
       jest.spyOn(auth, 'comparePassword').mockResolvedValue(false);
 
-      const result = await UserService.verifyUser('testUser', 'plaintextpassword');
-      expect(result).toBe(false);
+      expect(await UserService.verifyUser('testUser', 'plaintextpassword')).toBe(false);
     });
   });
 
@@ -112,16 +108,15 @@ describe('UserService', () => {
       expect(result).toBe(mockToken);
     });
 
-    it('should return an error if the user does not exist', async () => {
+    it('should throw an error if the user does not exist', async () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      const result = await UserService.generateToken('nonExistentUser');
-      expect(result).toEqual(new Error('User not found'));
+      await expect(UserService.generateToken('nonExistentUser')).rejects.toThrow(new Error('User not found'));
     });
   });
 
   describe('verifyToken', () => {
-    it('should return true if the token is valid', async () => {
+    it('should return a username if the token is valid', async () => {
       const mockToken = 'validtoken';
       const mockUserToken = { ...mockUser, ID: 1, tokenUses: 1000 };
       
@@ -133,35 +128,33 @@ describe('UserService', () => {
       expect(auth.verifyToken).toHaveBeenCalledWith(mockToken);
       expect(UserService.getUser).toHaveBeenCalledWith('testUser');
       expect(User.update).toHaveBeenCalledWith({ tokenUses: 999 }, { where: { ID: 1 } });
-      expect(result).toBe(true);
+      expect(result).toBe('testUser');
     });
 
-    it('should return false if the token is invalid', async () => {
+    it('should throw an error if the token is invalid', async () => {
       jest.spyOn(auth, 'verifyToken').mockRejectedValue(new Error('Invalid token'));
 
-      const result = await UserService.verifyToken('invalidtoken');
-      expect(result).toBe(false);
+      await expect(UserService.verifyToken('invalidtoken')).rejects.toThrow(new Error('Invalid token'));
     });
 
-    it('should return false if the user does not exist', async () => {
+    it('should throw an error if the user does not exist', async () => {
       const mockToken = 'validtoken';
       const mockUserToken = { ...mockUser, ID: 1, tokenUses: 1000 };
 
       jest.spyOn(auth, 'verifyToken').mockResolvedValue('testUser');
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      expect(await UserService.verifyToken(mockToken)).toBe(false);
+      await expect(UserService.verifyToken(mockToken)).rejects.toThrow(new Error('User not found'));
     });
 
-    it('should return false if the token update fails', async () => {
+    it('should throw an error if the token update fails', async () => {
       const mockToken = 'validtoken';
       const mockUserToken = { ...mockUser, ID: 1, tokenUses: 0 };
 
       jest.spyOn(auth, 'verifyToken').mockResolvedValue('testUser');
       jest.spyOn(UserService, 'getUser').mockResolvedValue(mockUserToken);
       
-      const result = await UserService.verifyToken(mockToken);
-      expect(result).toBe(false);
+      await expect(UserService.verifyToken(mockToken)).rejects.toThrow(new Error('Invalid token'));
     });
   });
 
@@ -175,11 +168,10 @@ describe('UserService', () => {
       expect(result).toBe('testgroup');
     });
 
-    it('should return null if the user does not exist', async () => {
+    it('should return an error if the user does not exist', async () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      const result = await UserService.getUserGroup('nonExistentUser');
-      expect(result).toBe(null);
+      await expect(UserService.getUserGroup('nonExistentUser')).rejects.toThrow(new Error('User not found'));
     });
   });
 
@@ -198,11 +190,10 @@ describe('UserService', () => {
       });
     });
 
-    it('should return null if the user does not exist', async () => {
+    it('should return an error if the user does not exist', async () => {
       jest.spyOn(UserService, 'getUser').mockResolvedValue(null);
 
-      const result = await UserService.getUserPerms('nonExistentUser');
-      expect(result).toBe(null);
+      await expect(UserService.getUserPerms('nonExistentUser')).rejects.toThrow(new Error('User not found'));
     });
   })
 });

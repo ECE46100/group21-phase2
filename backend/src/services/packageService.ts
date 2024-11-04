@@ -4,7 +4,7 @@ import { Version } from '../models/version';
 import type { PackageAttributes, PackageCreationAttributes } from '../models/package';
 import type { VersionAttributes, VersionCreationAttributes } from '../models/version';
 
-import { satisfies, coerce } from 'semver';
+import { satisfies } from 'semver';
 
 export interface PackageSearchResult {
   Version: string,
@@ -17,12 +17,26 @@ export interface PackageQuery {
   Name: string,
 }
 
+interface PackageQueryOptions {
+  offset: number;
+  limit: number;
+  order: [string, string][];
+  where?: {
+    packageID: number[];
+  };
+}
+
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
     const packageObj = await Package.findOne({ where: { name: packageName } });
     return packageObj ? packageObj.ID : null;
   }
 
+  public async getPackageName(packageID: number): Promise<string | null> {
+    const packageObj = await Package.findByPk(packageID);
+    return packageObj ? packageObj.name : null;
+  }
+  
   public async getPackageVersion(versionID: number): Promise<Version | null> {
     return await Version.findByPk(versionID);
   }
@@ -40,14 +54,14 @@ class PackageService {
 
     const packageIDs = Array.from(queryMetadata.keys());
 
-    const query = {
+    const query: PackageQueryOptions = {
       offset: 50 * queryOffset,
       limit: 50,
       order: [['createdAt', 'ASC']] as [string, string][]
-    }
+    };
     
     if (packageQueries[0].Name !== "*") {
-      (query as any).where = { packageID: packageIDs };
+      query.where = { packageID: packageIDs };
     }
 
     let matchingPackagesCount = 0;
@@ -55,7 +69,6 @@ class PackageService {
 
     while (matchingPackagesCount < 50) {
       const versions = await Version.findAndCountAll(query);
-      console.log(versions);
 
       if (versions.count === 0 || versions.rows.length === 0) {
         result[0] = -1;
@@ -65,15 +78,13 @@ class PackageService {
 
       for (const version of versions.rows) {
         const semVer = packageQueries[0].Name !== "*" ? queryMetadata.get(version.packageID)?.Version : packageQueries[0].Version;
-        if (semVer) {
-          console.log(coerce(version.version), semVer, satisfies(version.version, semVer));
-        }
+
         if (semVer && satisfies(version.version, semVer)) {
           if (result[0] !== queryOffset || result[1] >= semverOffset) {
             result[2].push({
               Version: version.version,
               ID: version.ID.toString(),
-              Name: (await Package.findByPk(version.packageID))?.name || "Unknown"
+              Name: (await Package.findByPk(version.packageID))?.name ?? "Unknown"
             });
             matchingPackagesCount++;
           }

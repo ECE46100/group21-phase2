@@ -18,7 +18,7 @@ function isUserAuthenticationSchema(user: any): user is UserAuthenticationSchema
   return typeof user.password === 'string';
 }
 
-async function authenticate(req: Request, res: Response) {
+export default async function authenticate(req: Request, res: Response) {
   const { User: user, Secret: secret } = req.body;
   if (!isUserSchema(user) || !isUserAuthenticationSchema(secret)) {
     res.status(400).send('Invalid request');
@@ -36,5 +36,3 @@ async function authenticate(req: Request, res: Response) {
     res.status(401).send('Unauthorized');
   }
 }
-
-export default authenticate;

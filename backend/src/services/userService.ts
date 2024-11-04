@@ -10,49 +10,77 @@ interface UserPerms {
 }
 
 class UserService {
-  public async createUser(user: UserCreationAttributes): Promise<boolean> {
+  /**
+   * Creates a new user in the database
+   * @param user: UserCreationAttributes (see models/user.ts)
+   * @returns undefined if successful, Error if failed
+   */
+  public async createUser(user: UserCreationAttributes): Promise<undefined> {
     /* TODO: Check for "strong" password */
     const hashedPassword = await auth.hashPassword(user.password);
     user.password = hashedPassword;
     try {
       await User.create(user);
-      return true;
+      return;
     } catch (err) {
-      return false;
+      throw new Error("Failed to create user: " + err);
     }
   }
 
-  public async deleteUser(username: string): Promise<boolean> {
+  /**
+   * Deletes a user from the database
+   * @param username: string
+   * @returns undefined if successful, Error if failed
+   */
+  public async deleteUser(username: string): Promise<undefined> {
     const user = await this.getUser(username);
     if (user) {
       await User.destroy({ where: { ID: user.ID } });
-      return true;
+      return;
     }
-    return false;
+    throw new Error("User not found");
   }
 
+  /**
+   * Gets a user by username from the database
+   * @param username: string
+   * @returns UserCreationAttributes (see models/user.ts), null if user not found
+   */
   public async getUser(username: string): Promise<UserAttributes | null> {
     return await User.findOne({ where: { username: username } });
   }
 
+  /**
+   * Verifies a user's password
+   * @param username: string
+   * @param password: string
+   * @returns true if user is verified, false if not, Error if user not found
+   */
   public async verifyUser(username: string, password: string): Promise<boolean> {
     const user = await this.getUser(username);
-    if (user) {
-      return await auth.comparePassword(password, user.password);
-    }
-    return false;
+    return user ? await auth.comparePassword(password, user.password) : false;
   }
 
-  public async generateToken(username: string): Promise<string | Error> {
+  /**
+   * Generates a JWT token for a user
+   * @param username: string
+   * @returns JWT token if user is verified, Error if user not found
+   */
+  public async generateToken(username: string): Promise<string> {
     const user = await this.getUser(username);
     if (!user) {
-      return new Error("User not found");
+      throw new Error("User not found");
     }
     await User.update({ tokenUses: 1000 }, { where: { ID: user.ID } });
     return await auth.generateToken(username);
   }
 
-  public async verifyToken(token: string): Promise<string | null> {
+  /**
+   * Verifies a JWT token
+   * @param token: string
+   * @returns username if token is verified, Error if token is invalid or user not found
+   */
+  public async verifyToken(token: string): Promise<string> {
     try {
       const username = await auth.verifyToken(token);
       const user = await this.getUser(username);
@@ -61,25 +89,34 @@ class UserService {
           await User.update({ tokenUses: user.tokenUses - 1 }, { where: { ID: user.ID } }); // TODO: Potential Race Condition
           return username;
         } else {
-          return null;
+          throw new Error("Token uses exceeded");
         }
       }
+    } catch (err) {
+      throw new Error("Invalid token");
     }
-    catch (err) {
-      return null;
-    }
-    return null;
+    throw new Error("User not found");
   }
 
-  public async getUserGroup(username: string): Promise<string | null> {
+  /**
+   * Get a user's group
+   * @param username: string
+   * @returns string if user is found, Error if user not found
+   */
+  public async getUserGroup(username: string): Promise<string> {
     const user = await this.getUser(username);
     if (user) {
       return user.userGroup;
     }
-    return null;
+    throw new Error("User not found");
   }
 
-  public async getUserPerms(username: string): Promise<UserPerms | null> {
+  /**
+   * Get a user's permissions
+   * @param username: string
+   * @returns UserPerms if user is found, Error if user not found
+   */
+  public async getUserPerms(username: string): Promise<UserPerms> {
     const user = await this.getUser(username);
     if (user) {
       return {
@@ -89,7 +126,7 @@ class UserService {
         adminPerm: user.adminPerm
       };
     }
-    return null;
+    throw new Error("User not found");
   }
 }
 

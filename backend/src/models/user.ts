@@ -1,7 +1,7 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
 
-interface UserAttributes {
+export interface UserAttributes {
   ID?: number;
   username: string;
   password: string;
@@ -13,9 +13,9 @@ interface UserAttributes {
   tokenUses: number;
 }
 
-interface UserCreationAttributes extends Omit<UserAttributes, 'ID' | 'tokenUses'> {}
+export interface UserCreationAttributes extends Omit<UserAttributes, 'ID' | 'tokenUses'> {}
 
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public ID!: number;
   public username!: string;
   public password!: string;
@@ -75,7 +75,3 @@ User.init({
   sequelize,
   timestamps: true
 });
-
-/* TODO: create default user (if they don't exist */
-
-export { User, UserAttributes, UserCreationAttributes };

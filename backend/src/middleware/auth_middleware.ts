@@ -1,6 +1,6 @@
 import userService from "../services/userService";
 
-async function authMiddleware(req: any, res: any, next: any) {
+export async function authMiddleware(req: any, res: any, next: any) {
   const token = req.header("X-Authorization");
   if (!token) {
     res.status(403).send("Unauthorized - no token provided");
@@ -17,10 +17,8 @@ async function authMiddleware(req: any, res: any, next: any) {
   next();
 }
 
-async function permMiddleware(req: any, res: any, next: any) {
+export async function permMiddleware(req: any, res: any, next: any) {
   const userPerms = await userService.getUserPerms(req.middleWareData.username);
   req.middleWareData.permissions = userPerms;
   next();
 }
-
-export { authMiddleware, permMiddleware };

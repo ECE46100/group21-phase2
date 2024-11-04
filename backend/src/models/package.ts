@@ -1,17 +1,19 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
 
-interface PackageAttributes {
+export interface PackageAttributes {
   ID?: number;
   name: string;
+  contentUpload: boolean;
 }
 
-interface PackageCreationAttributes extends Omit<PackageAttributes, 'ID'> {}
+export interface PackageCreationAttributes extends Omit<PackageAttributes, 'ID'> {}
 
-class Package extends Model<PackageAttributes, PackageCreationAttributes> implements PackageAttributes {
+export class Package extends Model<PackageAttributes, PackageCreationAttributes> implements PackageAttributes {
   public ID!: number;
   public name!: string;
-
+  public contentUpload!: boolean;
+  
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -27,10 +29,12 @@ Package.init({
     unique: true,
     allowNull: false
   },
+  contentUpload: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+  }
 }, {
   sequelize,
   tableName: 'packages',
   timestamps: true
 });
-
-export { Package, PackageAttributes, PackageCreationAttributes };

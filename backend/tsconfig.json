@@ -108,5 +108,5 @@
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
     "outDir": "./dist"
   },
-  "include": ["src/**/*.ts", "jest.config.js", "babel.config.js"],
+  "include": ["src/**/*.ts", "jest.config.js", "babel.config.js", "eslint.config.js"],
 }
