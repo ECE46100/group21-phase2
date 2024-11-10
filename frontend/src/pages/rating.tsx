@@ -20,6 +20,8 @@ const RatingPage: React.FC = () => {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
+  // check if Search performed
+  const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
 
   // Retrieve auth token from localStorage on component mount
   useEffect(() => {
@@ -27,7 +29,7 @@ const RatingPage: React.FC = () => {
     if (token) {
       setAuthToken(token);
     } else {
-      alert('Authentication token not found. Please log in.');
+      console.log('no token set while entered rating');
     }
   }, []);
 
@@ -54,32 +56,12 @@ const RatingPage: React.FC = () => {
         body: JSON.stringify(requestBody),
       });
 
-
-      // Simulate response data
-      // const response1 = JSON.stringify({
-      //   status: 200,
-      //   data: [
-      //     {
-      //       Name: 'example-package',
-      //       Version: '1.0.0',
-      //       ID: '1',
-      //     },
-      //     {
-      //       Name: 'another-package',
-      //       Version: '2.0.1',
-      //       ID: '2',
-      //     },
-      //   ],
-      //   headers: {
-      //     offset: '10',
-      //   },
-      // });
-      // const response = JSON.parse(response1);
-
       if (response.status === 200) {
-        const data: PackageMetadata[] = await response.json();
+        const allData= await response.json();
+        const data: PackageMetadata[]  = allData.data
         setPackages(data);
-        setOffset(page);  // Update offset with the current page number
+        setOffset(page);
+        setSearchPerformed(true);
       } else if (response.status === 400) {
         setError('Search failed: Missing fields or invalid query.');
       } else if (response.status === 403) {
@@ -109,6 +91,7 @@ const RatingPage: React.FC = () => {
       });
 
       if (response.ok) {
+        // TODO : CHECK YML SPEC for proper parsing of response
         const data: RatingData = await response.json();
         setRatingData(data);
       } else {
@@ -129,7 +112,7 @@ const RatingPage: React.FC = () => {
   };
 
   return (
-    <PageLayout title="Package Rating Overview">
+    <PageLayout title="Package Rating">
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
@@ -154,35 +137,38 @@ const RatingPage: React.FC = () => {
 
       {error && <p style={{ color: 'red', marginTop: '20px' }}>{error}</p>}
 
-      {packages.length > 0 ? (
+      {searchPerformed && (
         <div style={{ marginTop: '30px' }}>
-          <h3>Available Packages:</h3>
-          <ul style={{ listStyleType: 'none', padding: '0' }}>
-            {packages.map((pkg) => (
-              <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                <strong>{pkg.Name}</strong>
-                <button
-                  onClick={() => fetchRating(pkg.ID)}
-                  style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Get Rating
+          <h3>Search Results:</h3>
+          {packages.length > 0 ? (
+            <>
+              <ul style={{ listStyleType: 'none', padding: '0' }}>
+                {packages.map((pkg) => (
+                  <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+                    <strong>{pkg.Name}</strong>
+                    <button
+                      onClick={() => fetchRating(pkg.ID)}
+                      style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    >
+                      Get Rating
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px' }}>
+                <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
+                  Previous Page
                 </button>
-              </li>
-            ))}
-          </ul>
-
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px' }}>
-            <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
-              Previous Page
-            </button>
-            <span style={{ margin: '0 15px' }}>Current Page: {offset + 1}</span>
-            <button onClick={handleNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-              Next Page
-            </button>
-          </div>
+                <span style={{ margin: '0 15px' }}>Current Page: {offset + 1}</span>
+                <button onClick={handleNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+                  Next Page
+                </button>
+              </div>
+            </>
+          ) : (
+            <p style={{ marginTop: '20px' }}>No packages found. Try a different search term.</p>
+          )}
         </div>
-      ) : (
-        <p style={{ marginTop: '20px' }}>No packages found. Try a different search term.</p>
       )}
 
       {ratingData && (
