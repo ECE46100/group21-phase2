@@ -93,6 +93,11 @@ jobs:
             export DB_USER=${DB_USER}
             export DB_PASS=${DB_PASS}
             export DB_HOST=${DB_HOST}
+
+            echo "try printenv"
+            printenv DB_HOST
+            echo "end printenv"
+
             echo "DB_NAME is set to $DB_NAME"
             echo "DB_USER is set to $DB_USER"
             echo "DB_HOST is set to $DB_HOST"
