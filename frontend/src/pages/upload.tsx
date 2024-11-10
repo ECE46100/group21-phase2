@@ -12,17 +12,26 @@ const UploadPage: React.FC = () => {
   // Retrieve auth token from localStorage on component mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    console.log(token);
     if (token) {
       setAuthToken(token);
     } else {
-      alert('Authentication token not found. Please log in.');
+      console.log('no token set while entered upload');
     }
   }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+
+      const isZipFile = selectedFile.type === 'application/zip' || selectedFile.name.endsWith('.zip');
+
+      if (!isZipFile) {
+        alert('Please select a ZIP file.');
+        e.target.value = '';
+        setFile(null);
+      } else {
+        setFile(selectedFile);
+      }
     }
   };
 
@@ -30,7 +39,7 @@ const UploadPage: React.FC = () => {
     e.preventDefault();
 
     if (!file) {
-      alert('Please select a file to upload.');
+      alert('Please select a file to upload.'); // impossible
       return;
     }
 
@@ -133,7 +142,6 @@ process.exit(1)
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          required
           style={{ width: '100%', padding: '8px', marginTop: '5px' }}
         />
       </label>

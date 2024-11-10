@@ -18,9 +18,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["@testing-library/jest-dom"],
   },
   "include": [
     "src"
-, "test/App.test.tsx"  ]
+, "test/App.test.tsx", "babel.config.js", "test/dummy.test.tsx", "test/dummy.tsx"  ]
 }
