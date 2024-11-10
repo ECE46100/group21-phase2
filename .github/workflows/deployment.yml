@@ -85,20 +85,6 @@ jobs:
             # Navigate to the backend/dist directory
             cd /home/$EC2_USER/app/backend/dist || exit 1
             
-            # List files to confirm presence of server.js
-            
-            # Update and install PostgreSQL client
-            sudo yum update -y
-            sudo amazon-linux-extras enable postgresql14
-            sudo yum install -y postgresql
-            
-            # Verify psql installation
-            psql --version
-            
-            # Test manual DB connection
-            echo "manually connect"
-            PGPASSWORD=$DB_PASS psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "\dt"
-            echo "end manual connect"
 
             export DB_NAME=${DB_NAME}
             export DB_USER=${DB_USER}
