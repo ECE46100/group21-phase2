@@ -85,6 +85,7 @@ jobs:
             # Navigate to the backend/dist directory
             cd /home/$EC2_USER/app/backend/dist || exit 1
             
+            printenv DB_HOST
 
             export DB_NAME=${DB_NAME}
             export DB_USER=${DB_USER}
