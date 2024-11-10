@@ -86,7 +86,10 @@ jobs:
             # List files to confirm presence of server.js
             echo "Listing contents of backend/dist directory:"
             ls -l
-          
+            export DB_NAME=${DB_NAME}
+            export DB_USER=${DB_USER}
+            export DB_PASS=${DB_PASS}
+            export DB_HOST=${DB_HOST}
             # Install dependencies
             echo "Installing dependencies..."
             npm install
