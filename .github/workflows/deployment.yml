@@ -69,6 +69,7 @@ jobs:
             # Install Node.js 20.18.0
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
             sudo yum install -y nodejs unzip
+            sudo yum install -y nc
             sudo npm install -g pm2
           
             # Check if app.zip exists and unzip
