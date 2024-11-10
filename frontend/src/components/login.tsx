@@ -93,20 +93,25 @@ const Login: React.FC = () => {
   // Handle logout logic (kept as-is)
   const handleLogout = async () => {
     try {
+      
+      alert('Logged out successfully!');
+      setIsLoggedIn(false);
+      setFormData({ username: '', password: '' });
+      localStorage.removeItem('authToken'); // Clear the token
       console.log('Attempting logout...');
-      const response = await fetch('http://localhost:5000/logout', {
-        method: 'GET',
-      });
+      // const response = await fetch('http://localhost:5000/logout', {
+      //   method: 'GET',
+      // });
 
-      if (response.ok) {
-        alert('Logged out successfully!');
-        setIsLoggedIn(false);
-        setFormData({ username: '', password: '' });
-        localStorage.removeItem('authToken'); // Clear the token
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to logout.');
-      }
+      // if (response.ok) {
+      //   alert('Logged out successfully!');
+      //   setIsLoggedIn(false);
+      //   setFormData({ username: '', password: '' });
+      //   localStorage.removeItem('authToken'); // Clear the token
+      // } else {
+      //   const errorData = await response.json();
+      //   setError(errorData.message || 'Failed to logout.');
+      // }
     } catch (err) {
       setError('Network error. Please try again later.');
     }
@@ -114,7 +119,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="login-block">
-      {isLoggedIn ? (
+      {localStorage.getItem('authToken') ? (
         <div>
           <h2>Welcome, {formData.username}!</h2>
           <button onClick={handleLogout}>Logout</button>
