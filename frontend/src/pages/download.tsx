@@ -157,35 +157,37 @@ const DownloadPage: React.FC = () => {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      <div style={{ marginTop: '30px' }}>
-        <h3>Available Packages:</h3>
-        {packages.length > 0 ? (
+      {packages.length > 0 ? (
+        <div style={{ marginTop: '30px' }}>
+          <h3>Available Packages:</h3>
           <ul style={{ listStyleType: 'none', padding: '0' }}>
             {packages.map((pkg) => (
               <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                <strong>{pkg.Name}</strong> (v{pkg.Version})
+                <strong>{pkg.Name}</strong>
                 <button
                   onClick={() => handleDownload(pkg.ID)}
                   style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
-                  Download
+                  Get Rating
                 </button>
               </li>
             ))}
           </ul>
-        ) : (
-          <p>No packages found. Try a different search term.</p>
-        )}
 
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-          <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
-            Previous Page
-          </button>
-          <button onClick={handleNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
-            Next Page
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px' }}>
+            <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
+              Previous Page
+            </button>
+            <span style={{ margin: '0 15px' }}>Current Page: {offset + 1}</span>
+            <button onClick={handleNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+              Next Page
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <p style={{ marginTop: '20px' }}>No packages found. Try a different search term.</p>
+      )}
+
     </PageLayout>
   );
 };
