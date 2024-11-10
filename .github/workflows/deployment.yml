@@ -71,6 +71,7 @@ jobs:
             sudo yum install -y nodejs unzip
             sudo yum install -y nc
             sudo npm install -g pm2
+            sudo yum install -y postgresql
           
             # Check if app.zip exists and unzip
             if [ -f "/home/$EC2_USER/app.zip" ]; then
@@ -85,7 +86,10 @@ jobs:
             cd /home/$EC2_USER/app/backend/dist || exit 1
             
             # List files to confirm presence of server.js
-
+            
+            echo "manually connect"
+            psql -h $DB_HOST -U $DB_USER -d $DB_NAME
+            echo "end manual connect"
 
             export DB_NAME=${DB_NAME}
             export DB_USER=${DB_USER}
