@@ -24,8 +24,7 @@ const DownloadPage: React.FC = () => {
     }
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (page = 0) => {
     setError(null);
 
     if (!authToken) {
@@ -35,46 +34,43 @@ const DownloadPage: React.FC = () => {
 
     try {
       const requestBody = [{ Name: searchTerm }];
-
       
-      // const response = await fetch(/packages?offset=${offset}, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'X-Authorization': authToken,
-      //   },
-      //   body: JSON.stringify(requestBody),
-      // });
-
-
-      // Simulate response data
-      const response1 = JSON.stringify({
-        status: 200,
-        data: [
-          {
-            Name: 'example-package',
-            Version: '1.0.0',
-            ID: '1',
-          },
-          {
-            Name: 'another-package',
-            Version: '2.0.1',
-            ID: '2',
-          },
-        ],
+      const response = await fetch(`/packages?offset=${page}`, {
+        method: 'POST',
         headers: {
-          offset: '10',
+          'Content-Type': 'application/json',
+          'X-Authorization': authToken,
         },
+        body: JSON.stringify(requestBody),
       });
 
-      // Parse the response as JSON
-      const response = JSON.parse(response1);
+      // Simulate response data
+      // const response1 = JSON.stringify({
+      //   status: 200,
+      //   data: [
+      //     {
+      //       Name: 'example-package',
+      //       Version: '1.0.0',
+      //       ID: '1',
+      //     },
+      //     {
+      //       Name: 'another-package',
+      //       Version: '2.0.1',
+      //       ID: '2',
+      //     },
+      //   ],
+      //   headers: {
+      //     offset: '10',
+      //   },
+      // });
+
+      // // Parse the response as JSON
+      // const response = JSON.parse(response1);
 
       if (response.status === 200) {
-        const data: PackageMetadata[] = response.data;
+        const data: PackageMetadata[] = await response.json();
         setPackages(data);
-        const newOffset = parseInt(response.headers.offset || '0', 10);
-        setOffset(newOffset);
+        setOffset(page);  // Update offset with the current page number
       } else if (response.status === 400) {
         setError('Search failed: Missing fields or invalid query.');
       } else if (response.status === 403) {
@@ -130,9 +126,17 @@ const DownloadPage: React.FC = () => {
     }
   };
 
+  const handleNextPage = () => {
+    handleSearch(offset + 1); // Go to the next page by increasing the page offset by 1
+  };
+
+  const handlePreviousPage = () => {
+    if (offset > 0) handleSearch(offset - 1); // Go to the previous page by decreasing the page offset by 1
+  };
+
   return (
     <PageLayout title="Download a Package">
-      <form onSubmit={handleSearch} style={{ maxWidth: '500px', margin: '0 auto' }}>
+      <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
             Search for Package:
@@ -161,7 +165,7 @@ const DownloadPage: React.FC = () => {
               <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
                 <strong>{pkg.Name}</strong> (v{pkg.Version})
                 <button
-                  onClick={() => {handleDownload(pkg.ID); console.log(pkg.ID)}}
+                  onClick={() => handleDownload(pkg.ID)}
                   style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   Download
@@ -172,6 +176,15 @@ const DownloadPage: React.FC = () => {
         ) : (
           <p>No packages found. Try a different search term.</p>
         )}
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+          <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
+            Previous Page
+          </button>
+          <button onClick={handleNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            Next Page
+          </button>
+        </div>
       </div>
     </PageLayout>
   );
