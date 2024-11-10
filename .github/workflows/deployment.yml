@@ -84,12 +84,14 @@ jobs:
             cd /home/$EC2_USER/app/backend/dist || exit 1
             
             # List files to confirm presence of server.js
-            echo "Listing contents of backend/dist directory:"
-            ls -l
+
             export DB_NAME=${DB_NAME}
             export DB_USER=${DB_USER}
             export DB_PASS=${DB_PASS}
             export DB_HOST=${DB_HOST}
+            echo "DB_NAME is set to $DB_NAME"
+            echo "DB_USER is set to $DB_USER"
+            echo "DB_HOST is set to $DB_HOST"
             # Install dependencies
             echo "Installing dependencies..."
             npm install
