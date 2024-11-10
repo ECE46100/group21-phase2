@@ -103,7 +103,7 @@ jobs:
             echo "Installing dependencies..."
             npm install
           
-           # echo "Starting the application..."
+            echo "Starting the application..."
             node server.js
 
           EOF
