@@ -1,6 +1,5 @@
-// src/login.tsx
 import React, { useState } from 'react';
-import '../assets/css/login.css'; // Optional: For styling
+import '../assets/css/login.css';
 
 interface AuthForm {
   username: string;
@@ -28,36 +27,38 @@ const Login: React.FC = () => {
       const requestBody = {
         User: {
           name: formData.username,
-          isAdmin: false, // Adjust this if needed based on your logic
+          isAdmin: false,
         },
         Secret: {
           password: formData.password,
         },
       };
 
-      // const response = await fetch('http://localhost:5000/authenticate', {
-      //   method: 'PUT',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify(requestBody),
-      // });
+      const response = await fetch('http://localhost:5000/authenticate', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      if (true) {
-        const token  = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-      // if (response.status === 200) {
-      //   const { token } = await response.json();
+      // if (true) {
+      //   const token  = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+      if (response.status === 200) {
+        console.log(response);
+        const allData= await response.json();
+        const token = allData.token;
         alert('Login successful!');
         setIsLoggedIn(true);
         localStorage.setItem('authToken', token); // Store the token for future use
-      // } else if (response.status === 400) {
-      //   setError('Missing fields or improperly formed request.');
-      // } else if (response.status === 401) {
-      //   setError('Invalid username or password.');
-      // } else if (response.status === 501) {
-      //   setError('Authentication not supported by the system.');
-      // } else {
-      //   setError('Failed to login due to an unknown error.');
+      } else if (response.status === 400) {
+        setError('Missing fields or improperly formed request.');
+      } else if (response.status === 401) {
+        setError('Invalid username or password.');
+      } else if (response.status === 501) {
+        setError('Authentication not supported by the system.');
+      } else {
+        setError('Failed to login due to an unknown error.');
       }
     } catch (err) {
       console.error('Error during login:', err);
