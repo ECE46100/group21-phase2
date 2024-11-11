@@ -39,7 +39,7 @@ describe('UserService', () => {
       jest.spyOn(auth, 'hashPassword').mockResolvedValue('hashedpassword');
       jest.spyOn(User, 'create').mockRejectedValue(new Error('DB Error'));
 
-      await expect(UserService.createUser(mockUser)).rejects.toThrow(new Error('Failed to create user: Error: DB Error'));
+      await expect(UserService.createUser(mockUser)).rejects.toThrow(new Error('Error: DB Error'));
     });
   });
 
@@ -99,7 +99,7 @@ describe('UserService', () => {
 
       jest.spyOn(UserService, 'getUser').mockResolvedValue(mockUserToken);
       jest.spyOn(User, 'update').mockResolvedValue([1]);  // Mock token update success
-      jest.spyOn(auth, 'generateToken').mockResolvedValue(mockToken);
+      jest.spyOn(auth, 'generateToken').mockReturnValue(mockToken);
 
       const result = await UserService.generateToken('testUser');
       expect(UserService.getUser).toHaveBeenCalledWith('testUser');

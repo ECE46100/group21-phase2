@@ -1,30 +1,8 @@
 import { Package } from '../models/package';
 import { Version } from '../models/version';
-
-import type { PackageAttributes, PackageCreationAttributes } from '../models/package';
-import type { VersionAttributes, VersionCreationAttributes } from '../models/version';
-
+import { PackageCreationAttributes, VersionCreationAttributes } from 'package-types';
+import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-types';
 import { satisfies } from 'semver';
-
-export interface PackageSearchResult {
-  Version: string,
-  ID: string,
-  Name: string,
-}
-
-export interface PackageQuery {
-  Version: string,
-  Name: string,
-}
-
-interface PackageQueryOptions {
-  offset: number;
-  limit: number;
-  order: [string, string][];
-  where?: {
-    packageID: number[];
-  };
-}
 
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {

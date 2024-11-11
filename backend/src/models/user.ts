@@ -1,19 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
-
-export interface UserAttributes {
-  ID?: number;
-  username: string;
-  password: string;
-  uploadPerm: boolean;
-  downloadPerm: boolean;
-  searchPerm: boolean;
-  adminPerm: boolean;
-  userGroup: string;
-  tokenUses: number;
-}
-
-export interface UserCreationAttributes extends Omit<UserAttributes, 'ID' | 'tokenUses'> {}
+import { UserAttributes, UserCreationAttributes } from 'user-types';
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public ID!: number;

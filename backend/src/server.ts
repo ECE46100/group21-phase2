@@ -29,11 +29,11 @@ sequelize.sync({ force: true })
     }
     await Package.create({
       name: "React",
+      contentUpload: true,
     });
     await Version.create({
       packageID: 1,
       version: "1.2.3",
-      packagePath: "none",
       packageUrl: "https://reactjs.org/",
       author: "Facebook",
       accessLevel: "public",
@@ -41,11 +41,11 @@ sequelize.sync({ force: true })
     });
     await Package.create({
       name: "Lodash",
+      contentUpload: true,
     });
     await Version.create({
       packageID: 2,
       version: "17.0.2",
-      packagePath: "none",
       packageUrl: "https://reactjs.org/",
       author: "Facebook",
       accessLevel: "public",
@@ -53,11 +53,11 @@ sequelize.sync({ force: true })
     });
     await Package.create({
       name: "UnderScore",
+      contentUpload: true,
     });
     await Version.create({
       packageID: 3,
       version: "1.2.3",
-      packagePath: "none",
       packageUrl: "https://reactjs.org/",
       author: "Facebook",
       accessLevel: "public",
@@ -66,7 +66,6 @@ sequelize.sync({ force: true })
     await Version.create({
       packageID: 1,
       version: "1.2.4",
-      packagePath: "none",
       packageUrl: "https://reactjs.org/",
       author: "Facebook",
       accessLevel: "public",

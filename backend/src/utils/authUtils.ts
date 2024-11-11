@@ -1,4 +1,4 @@
-import { sign, verify } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import type { JwtPayload } from 'jsonwebtoken';
 import { hash, compare } from 'bcrypt';
 
@@ -10,11 +10,11 @@ const saltRounds = 10;
  * @param username: string
  * @returns JWT that encodes the username
  */
-export async function generateToken(username: string): Promise<string> {
+export function generateToken(username: string): string {
   const payload = {
     username: username
   };
-  return sign(payload, secret, { expiresIn: '1h' });
+  return jwt.sign(payload, secret, { expiresIn: '1h' });
 }
 
 /**
@@ -24,7 +24,7 @@ export async function generateToken(username: string): Promise<string> {
  */
 export async function verifyToken(token: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    verify(token, secret, (err: Error | null, decoded: string | JwtPayload | undefined) => {
+    jwt.verify(token, secret, (err: Error | null, decoded: string | JwtPayload | undefined) => {
       if (err) {
         reject(new Error('Invalid token'));
       } else {

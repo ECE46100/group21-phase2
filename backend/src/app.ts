@@ -1,11 +1,16 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import { Request } from 'express-serve-static-core';
+
 import authenticate from './controllers/authenticate';
 import searchPackages from './controllers/searchPackages';
+import downloadPackage from './controllers/downloadPackage';
+
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
+
 const router = Router();
 
-router.post('/packages', authMiddleware, permMiddleware, async (req: any, res: any) => {
-  if (!req.middleWareData.permissions.searchPerm && !req.middleWareData.permissions.adminPerm) {
+router.post('/packages', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
   }
@@ -16,9 +21,8 @@ router.delete('/reset', (req: Request, res: Response) => {
   // TODO: Implement the logic to reset the database
 });
 
-router.get('/package/:id', (req: Request, res: Response) => {
-  const id = req.params.id;
-  // TODO: Implement the logic to fetch the package by id from the database
+router.get('/package/:id', async (req: Request, res: Response) => {
+  return await downloadPackage(req, res);
 });
 
 router.put('/package/:id', (req: Request, res: Response) => {
@@ -42,11 +46,6 @@ router.post('/package/:id/cost', (req: Request, res: Response) => {
 
 router.put('/authenticate', async (req: Request, res: Response) => {
   return await authenticate(req, res);
-});
-
-router.get('/package/byName/:name', (req: Request, res: Response) => {
-  const name = req.params.name;
-  // TODO: Implement the logic to fetch the package by name from the database
 });
 
 router.post('/package/byRegEx', (req: Request, res: Response) => {

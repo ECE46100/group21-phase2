@@ -18,21 +18,21 @@ export default async function downloadPackage(req: Request, res: Response) {
     return;
   }
 
-  const packageZip = await readPackageZip(versionObj.packageID, versionObj.ID);
-  if (!packageZip) {
+  try {
+    const packageZip = readPackageZip(versionObj.packageID, versionObj.ID);
+    res.status(200).send({
+      metadata: {
+        Name: PackageService.getPackageName(versionObj.packageID),
+        Version: versionObj.version,
+        ID: IDStr,
+      },
+      data: {
+        Content: packageZip,
+        JSProgram: "", // TODO: Implement
+      }
+    });
+  } catch {
     res.status(500).send('Error reading package');
     return;
   }
-
-  res.status(200).send({
-    metadata: {
-      Name: PackageService.getPackageName(versionObj.packageID),
-      Version: versionObj.version,
-      ID: IDStr,
-    },
-    data: {
-      Content: packageZip,
-      JSProgram: "", // TODO: Implement
-    }
-  });
 }

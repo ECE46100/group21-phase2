@@ -2,3 +2,6 @@
 **/node_modules
 **/dist
 /db
+/backend/packages
+/backend/unzipped
+**/.env

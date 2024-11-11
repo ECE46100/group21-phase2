@@ -1,17 +1,6 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
-
-export interface VersionAttributes {
-  ID?: number;
-  version: string;
-  packageID: number;
-  author: string;
-  accessLevel: string;
-  programPath: string; // TODO: maybe should be located in the package table
-  packageUrl: string; // TODO: maybe should be located in the package table
-}
-
-export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
+import { VersionAttributes, VersionCreationAttributes } from 'package-types';
 
 export class Version extends Model<VersionAttributes, VersionCreationAttributes> implements VersionAttributes {
   public ID!: number;

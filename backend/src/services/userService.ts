@@ -1,13 +1,6 @@
 import { User } from "../models/user";
 import * as auth from "../utils/authUtils";
-import type { UserAttributes, UserCreationAttributes } from "../models/user";
-
-interface UserPerms {
-  uploadPerm: boolean;
-  downloadPerm: boolean;
-  searchPerm: boolean;
-  adminPerm: boolean;
-}
+import type { UserAttributes, UserCreationAttributes, UserPerms } from "user-types";
 
 class UserService {
   /**
@@ -22,8 +15,8 @@ class UserService {
     try {
       await User.create(user);
       return;
-    } catch (err) {
-      throw new Error("Failed to create user: " + err);
+    } catch (err: unknown) {
+      throw new Error(err as string);
     }
   }
 
@@ -72,7 +65,7 @@ class UserService {
       throw new Error("User not found");
     }
     await User.update({ tokenUses: 1000 }, { where: { ID: user.ID } });
-    return await auth.generateToken(username);
+    return auth.generateToken(username);
   }
 
   /**
@@ -92,7 +85,7 @@ class UserService {
           throw new Error("Token uses exceeded");
         }
       }
-    } catch (err) {
+    } catch {
       throw new Error("Invalid token");
     }
     throw new Error("User not found");
