@@ -21,7 +21,11 @@ router.delete('/reset', (req: Request, res: Response) => {
   // TODO: Implement the logic to reset the database
 });
 
-router.get('/package/:id', async (req: Request, res: Response) => {
+router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
+    res.status(403).send('Unauthorized - missing permissions');
+    return;
+  }
   return await downloadPackage(req, res);
 });
 

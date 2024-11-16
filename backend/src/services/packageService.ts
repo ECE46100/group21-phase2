@@ -19,6 +19,11 @@ class PackageService {
     return await Version.findByPk(versionID);
   }
 
+  public async getVersionID(packageID: number, version: string): Promise<number | null> {
+    const versionObj = await Version.findOne({ where: { packageID, version } });
+    return versionObj ? versionObj.ID : null;
+  }
+
   public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
     const queryMetadata = new Map<number, PackageQuery>();
     

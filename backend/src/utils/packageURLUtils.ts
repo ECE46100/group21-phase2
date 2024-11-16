@@ -3,7 +3,7 @@ import axios from "axios";
 import { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import semver from "semver";
-
+import { PackageUrlObject, NPMResponse, GitHubResponse } from "package-types";
 dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -11,13 +11,7 @@ if (!GITHUB_TOKEN) {
   throw new Error('Missing GitHub Token');
 }
 
-interface PackageUrlObject {
-  name: string;
-  version: string;
-  content: Buffer;
-}
-
-export async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
+export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
 
   if (parsedUrl.hostname === 'www.github.com') {
@@ -26,14 +20,6 @@ export async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlOb
     return await handleNpmUrl(parsedUrl);
   } else {
     throw new Error('Unsupported URL Hostname');
-  }
-}
-
-interface NPMResponse {
-  name: string;
-  version: string;
-  dist: {
-    tarball: string;
   }
 }
 
@@ -95,7 +81,7 @@ async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
     if (tag) {
       const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball/${tag}`;
       const tarFile = await downloadTarUrl(tarballUrl, {'Authorization': `Bearer ${GITHUB_TOKEN}`});
-      tag = semver.clean(tag) ?? '1.0.0';
+      tag = semver.coerce(tag)?.version ?? '1.0.0';
       return { name: repo, version: tag, content: tarFile };
     } else {
       const tarballUrl = `https://github.com/${owner}/${repo}/tarball/`;
@@ -112,7 +98,7 @@ async function getLatestTag(owner: string, repo: string): Promise<string | null>
   const GITHUB_API_URL = `https://api.github.com/repos/${owner}/${repo}/tags`;
 
   try {
-    const response = await axios.get(GITHUB_API_URL, {
+    const response: AxiosResponse<GitHubResponse[]>  = await axios.get(GITHUB_API_URL, {
       headers: {
         'Authorization': `Bearer ${GITHUB_TOKEN}`,
       },
