@@ -2,13 +2,20 @@ import { Sequelize } from "sequelize";
 import dotenv from 'dotenv';
 dotenv.config();
 
-const { DB_USER, DB_PASS, DB_HOST, DB_NAME, CI_ON } = process.env;
+let { DB_USER, DB_PASS, DB_HOST, DB_NAME, CI_ON } = process.env;
 
-if ((!DB_NAME || !DB_USER || !DB_PASS || !DB_HOST) && !CI_ON) {
+if (CI_ON) {
+  DB_NAME = '';
+  DB_USER = '';
+  DB_PASS = '';
+  DB_HOST = '';
+}
+
+if ((!DB_NAME || !DB_USER || !DB_PASS || !DB_HOST)) {
   throw new Error("Missing database configuration");
 }
 
-export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
   host: DB_HOST,
   dialect: 'postgres'
 });
