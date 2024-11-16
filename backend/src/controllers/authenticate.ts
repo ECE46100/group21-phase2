@@ -1,29 +1,35 @@
 import { Request, Response } from 'express';
 import UserService from '../services/userService';
+import { z } from 'zod';
 
-interface UserSchema {
-  name: string;
-  isAdmin: boolean;
+const UserSchema = z.object({
+  name:    z.string(),
+  isAdmin: z.boolean(),
+});
+
+const SecretSchema = z.object({
+  password: z.string(),
+});
+
+const AuthSchema = z.object({
+  User:   UserSchema,
+  Secret: SecretSchema,
+});
+
+type AuthSchema = z.infer<typeof AuthSchema>;
+
+function isAuthSchema(authRequest: unknown): authRequest is AuthSchema {
+  return AuthSchema.safeParse(authRequest).success;
 }
 
-interface UserAuthenticationSchema {
-  password: string;
-}
-
-function isUserSchema(user: any): user is UserSchema {
-  return typeof user.name === 'string' && typeof user.isAdmin === 'boolean';
-}
-
-function isUserAuthenticationSchema(user: any): user is UserAuthenticationSchema {
-  return typeof user.password === 'string';
-}
-
-async function authenticate(req: Request, res: Response) {
-  const { user, secret } = req.body;
-  if (!isUserSchema(user) || !isUserAuthenticationSchema(secret)) {
+export default async function authenticate(req: Request, res: Response) {
+  const authRequest: unknown = req.body;
+  if (!isAuthSchema(authRequest)) {
     res.status(400).send('Invalid request');
     return;
   }
+  const user = authRequest.User;
+  const secret = authRequest.Secret;
   try {
     const isValidUser = await UserService.verifyUser(user.name, secret.password);
     if (isValidUser) {
@@ -36,5 +42,3 @@ async function authenticate(req: Request, res: Response) {
     res.status(401).send('Unauthorized');
   }
 }
-
-export default authenticate;
