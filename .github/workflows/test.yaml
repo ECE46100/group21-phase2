@@ -27,4 +27,6 @@ jobs:
 
       - name: Run Jest tests
         working-directory: backend
+        env:
+          CI_ON: true
         run: npm run test:ci

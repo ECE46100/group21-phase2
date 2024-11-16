@@ -1,27 +1,16 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import { VersionAttributes, VersionCreationAttributes } from 'package-types';
 
-interface VersionAttributes {
-  ID?: number;
-  version: string;
-  packageID: number;
-  packagePath: string;
-  author: string;
-  accessLevel: string;
-  programPath: string;
-}
-
-interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
-
-class Version extends Model<VersionAttributes, VersionCreationAttributes> implements VersionAttributes {
+export class Version extends Model<VersionAttributes, VersionCreationAttributes> implements VersionAttributes {
   public ID!: number;
   public version!: string;
   public packageID!: number;
-  public packagePath!: string;
   public author!: string;
   public accessLevel!: string;
   public timestamp!: Date;
   public programPath!: string;
+  public packageUrl!: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -41,10 +30,6 @@ Version.init({
     type: DataTypes.INTEGER,
     allowNull: false
   },
-  packagePath: {
-    type: new DataTypes.STRING(128),
-    allowNull: false
-  },
   author: {
     type: new DataTypes.STRING(128),
     allowNull: false
@@ -56,11 +41,13 @@ Version.init({
   programPath: {
     type: new DataTypes.STRING(128),
     allowNull: true
+  },
+  packageUrl: {
+    type: new DataTypes.STRING(128),
+    allowNull: true
   }
 }, {
   sequelize,
   tableName: 'versions',
   timestamps: true
 });
-
-export default Version;

@@ -1,21 +1,8 @@
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
+import { UserAttributes, UserCreationAttributes } from 'user-types';
 
-interface UserAttributes {
-  ID?: number;
-  username: string;
-  password: string;
-  uploadPerm: boolean;
-  downloadPerm: boolean;
-  searchPerm: boolean;
-  adminPerm: boolean;
-  userGroup: string;
-  tokenUses: number;
-}
-
-interface UserCreationAttributes extends Omit<UserAttributes, 'ID' | 'tokenUses'> {}
-
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public ID!: number;
   public username!: string;
   public password!: string;
@@ -75,5 +62,3 @@ User.init({
   sequelize,
   timestamps: true
 });
-
-export { User, UserAttributes, UserCreationAttributes };
