@@ -32,21 +32,22 @@ jobs:
           remote_key: ${{ secrets.SSH_KEY }}
           
       - name: configure env and run
-        run:
+        run: |
           echo "${{ secrets.SSH_KEY }}" > private_key && 
           chmod 600 private_key &&
-          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} &&
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
 
-          cd ~/app_deployment/backend &&
-          touch .env &&
-          echo DB_HOST=${{ secrets.DB_HOST }} >> .env &&
-          echo DB_USER=${{ secrets.DB_USER }} >> .env &&
-          echo DB_NAME=${{ secrets.DB_NAME }} >> .env &&
-          echo DB_PASS=${{ secrets.DP_PASS }} >> .env &&
+            cd ~/app_deployment/backend &&
+            touch .env &&
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env &&
+            echo DB_USER=${{ secrets.DB_USER }} >> .env &&
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env &&
+            echo DB_PASS=${{ secrets.DP_PASS }} >> .env &&
 
-          echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env &&
-          echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env &&
-          echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
+            echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env &&
+            echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env &&
+            echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
+            '
 
           
           
