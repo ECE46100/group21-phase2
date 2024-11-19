@@ -1,0 +1,42 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: deploy
+    runs-on: ubuntu-latest
+    env:
+      SSH_KEY: ${{ secrets.SSH_KEY }}
+      SSH_HOST: ${{secrets.SSH_HOST}}
+      SSH_USER: ${{secrets.SSH_USER}}
+      
+      DB_HOST: ${{secrets.DB_HOST}}
+      DB_NAME: ${{secrets.DB_NAME}}
+      DB_USER: ${{secrets.DB_USER}}
+      DB_PASS: ${{secrets.DB_PASS}}
+      
+    steps:
+      - name: fetch code
+        uses: actions/checkout@v5
+
+      - name: install dependencies
+        run: npm install
+        working-directory: backend
+
+      - name: compile to js
+        run: npx tsc
+        working-directory: backend
+
+      - name: deploy with rsync
+        uses: burnett01/rsync-deployments@5.1
+        with:
+          switches: -avzr --delete
+          path: ./*
+          remote_path: /app
+          remote_host: SSH_HOST
+          remote_user: SSH_USER
+          remote_key: SSH_KEY
+      
