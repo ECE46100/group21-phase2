@@ -8,15 +8,6 @@ jobs:
   build:
     name: deploy
     runs-on: ubuntu-latest
-    env:
-      SSH_KEY: ${{ secrets.SSH_KEY }}
-      SSH_HOST: ${{secrets.SSH_HOST}}
-      SSH_USER: ${{secrets.SSH_USER}}
-      
-      DB_HOST: ${{secrets.DB_HOST}}
-      DB_NAME: ${{secrets.DB_NAME}}
-      DB_USER: ${{secrets.DB_USER}}
-      DB_PASS: ${{secrets.DB_PASS}}
       
     steps:
       - name: fetch code
@@ -36,7 +27,7 @@ jobs:
           switches: -avzr --delete
           path: ./*
           remote_path: /app
-          remote_host: SSH_HOST
-          remote_user: SSH_USER
-          remote_key: SSH_KEY
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_KEY }}
       
