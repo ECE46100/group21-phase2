@@ -61,13 +61,16 @@ class PackageService {
 
     let matchingPackagesCount = 0;
     const result : [number, number, PackageSearchResult[]] = [queryOffset, semverOffset, []];
+    
 
     while (matchingPackagesCount < 50) {
       const versions = await Version.findAndCountAll(query);
+      console.log(versions);
 
       if (versions.count === 0 || versions.rows.length === 0) {
         result[0] = -1;
         result[1] = -1;
+        console.log(result);
         return result;
       }
 

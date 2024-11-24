@@ -91,8 +91,10 @@ const UpdatePage: React.FC = () => {
 
         if (response.status === 200) {
           const allData = await response.json();
-          const data: PackageMetadata[] = allData.data;
+          // console.log(allData);
+          const data: PackageMetadata[] = allData;
           setPackages(data);
+
 
           setOffset(pageOffset);
           setSearchPerformed(true);
