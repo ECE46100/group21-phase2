@@ -64,7 +64,8 @@ class UserService {
     if (!user) {
       throw new Error("User not found");
     }
-    await User.update({ tokenUses: 1000 }, { where: { ID: user.ID } });
+    await User.update({ tokenUses: 1000 }, { where: { ID: user.ID } }); // sus, perhaps not working
+    // console.log(`in userService.ts generateToken(), tokenUses of user : ${user.tokenUses}`); //delete this
     return auth.generateToken(username);
   }
 
@@ -77,11 +78,15 @@ class UserService {
     try {
       const username = await auth.verifyToken(token);
       const user = await this.getUser(username);
+      // console.log(`in userService.ts verifyToken(), token : ${user?.tokenUses}`); //delete this
       if (user) {
         if (user.tokenUses > 0) {
           await User.update({ tokenUses: user.tokenUses - 1 }, { where: { ID: user.ID } }); // TODO: Potential Race Condition
+          // console.log('in userService.ts verifyToken(), tokenUses > 0'); // delete this
+          // console.log(` after update, tokenUses : ${user.tokenUses}`);
           return username;
         } else {
+          // console.log('in userService.ts verifyToken(), tokenUses < 0'); // delete this
           throw new Error("Token uses exceeded");
         }
       }

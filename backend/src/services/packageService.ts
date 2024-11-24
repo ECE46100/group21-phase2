@@ -3,6 +3,7 @@ import { Version } from '../models/version';
 import { PackageCreationAttributes, VersionCreationAttributes } from 'package-types';
 import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-types';
 import { satisfies } from 'semver';
+import { Op } from 'sequelize';
 
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
@@ -103,6 +104,62 @@ class PackageService {
     } catch (err) {
       return false;
     }
+  }
+
+  /**
+   * Get packages that match a regex pattern in their name or description.
+   *
+   * @param regex - The regex pattern as a string.
+   * @param queryOffset - Offset for pagination.
+   * @param semverOffset - Semver-based offset for finer pagination.
+   * @returns A tuple: [queryOffset, semverOffset, matching packages].
+   */
+  public async getPackagesByRegex(regex: string, queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
+    const regexObj = new RegExp(regex, "i"); // Case-insensitive regex
+    const result: [number, number, PackageSearchResult[]] = [queryOffset, semverOffset, []];
+    const matchingPackagesCount = 50;
+
+    try {
+      // Query the database for matching packages
+      const matchingPackages = await Package.findAndCountAll({
+        where: {
+          [Op.or]: [
+            { name: { [Op.regexp]: regexObj.source } }
+          ]
+        },
+        offset: queryOffset * matchingPackagesCount,
+        limit: matchingPackagesCount,
+        order: [['createdAt', 'ASC']]
+      });
+
+      // Map the results to include versions and semver pagination
+      for (const pkg of matchingPackages.rows) {
+        const versions = await Version.findAll({
+          where: { packageID: pkg.ID },
+          order: [['createdAt', 'ASC']],
+          offset: semverOffset,
+          limit: matchingPackagesCount
+        });
+
+        for (const version of versions) {
+          result[2].push({
+            ID: version.ID.toString(),
+            Name: pkg.name,
+            Version: version.version
+          });
+        }
+      }
+
+      // Return updated offsets and the results
+      result[0] += matchingPackages.rows.length > 0 ? 1 : 0;
+      result[1] += semverOffset + matchingPackages.rows.length;
+    } catch (err) {
+      console.error("Error fetching packages by regex:", err);
+      result[0] = -1; // Indicates failure
+      result[1] = -1;
+    }
+
+    return result;
   }
 
   public async createVersion(versionObj: VersionCreationAttributes): Promise<boolean> {
