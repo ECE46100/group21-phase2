@@ -14,3 +14,9 @@ npm start
 cd frontend
 npx jest --coverage
 ```
+3. To run a specific Jest test :
+```bash
+cd fronend
+// for example to the frontend/test/login.test.ts
+npx jest login
+```
