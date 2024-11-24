@@ -5,7 +5,7 @@ interface AuthForm {
   username: string;
   password: string;
 }
-const backendPort = '';
+const backendPort = ''; //since we're using proxy now, frontend and backend are on the same port
 const Login: React.FC = () => {
   const [formData, setFormData] = useState<AuthForm>({ username: '', password: '' });
   const [error, setError] = useState<string | null>(null);
@@ -43,8 +43,6 @@ const Login: React.FC = () => {
         body: JSON.stringify(requestBody),
       });
 
-      // if (true) {
-      //   const token  = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
       if (response.status === 200) {
         console.log(response);
         // const allData= await response.json();

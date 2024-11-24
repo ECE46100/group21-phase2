@@ -1,15 +1,13 @@
-// src/test/login.test.tsx
 import React from 'react';
 import '@testing-library/jest-dom';
-import { MemoryRouter } from 'react-router-dom';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Login from '../src/components/login';
 
 beforeEach(() => {
-    localStorage.clear();
-    jest.resetAllMocks();
-    global.fetch = jest.fn();
-  });
+  localStorage.clear();
+  jest.resetAllMocks();
+  global.fetch = jest.fn();
+});
 
 jest.clearAllMocks();
 window.alert = jest.fn(); // Mock alert
@@ -42,12 +40,10 @@ describe('Login Component', () => {
     render(<Login />);
 
     (fetch as jest.Mock).mockResolvedValueOnce({
-        status: 200,
-        json: async () => ({
-          token: 'mockAuthToken123'
-        }),
-      });
-    
+      status: 200,
+      text: async () => 'mockAuthToken123', //since backend just do res.status(200).send(token) instead of sending a json
+    });
+
     fireEvent.change(screen.getByPlaceholderText('Username'), { target: { value: 'testuser' } });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password123' } });
     fireEvent.click(screen.getByText('Login'));
@@ -55,6 +51,7 @@ describe('Login Component', () => {
     await waitFor(() => {
       expect(window.alert).toHaveBeenCalledWith('Login successful!');
       expect(localStorage.getItem('authToken')).toBe('mockAuthToken123');
+      expect(localStorage.getItem('userName')).toBe('testuser');
     });
 
     expect(screen.getByText('Welcome, testuser!')).toBeInTheDocument();
@@ -63,20 +60,17 @@ describe('Login Component', () => {
 
   test('shows error if login fails due to invalid credentials', async () => {
     render(<Login />);
-    
+
     (fetch as jest.Mock).mockResolvedValueOnce({
-        status: 401,
-        message: 'Invalid username or password.',
+      status: 401,
     });
-    
-    const setError = jest.fn();
 
     fireEvent.change(screen.getByPlaceholderText('Username'), { target: { value: 'testuser' } });
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'wrongpassword' } });
     fireEvent.click(screen.getByText('Login'));
 
     await waitFor(() => {
-      expect(setError).toHaveBeenCalledWith('Invalid username or password.');
+      expect(screen.getByText('Invalid username or password.')).toBeInTheDocument();
     });
   });
 
@@ -87,9 +81,9 @@ describe('Login Component', () => {
     const passwordInput = screen.getByPlaceholderText('Password');
 
     // Mock the sign-up API call response
-    jest.spyOn(global, 'fetch').mockResolvedValueOnce({
+    (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-    } as Response);
+    });
 
     fireEvent.change(usernameInput, { target: { value: 'newuser' } });
     fireEvent.change(passwordInput, { target: { value: 'newpassword' } });
@@ -105,7 +99,8 @@ describe('Login Component', () => {
   });
 
   test('successful logout removes auth token and resets form', () => {
-    localStorage.setItem('authToken', 'mockAuthToken');
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
 
     render(<Login />);
 
@@ -113,7 +108,22 @@ describe('Login Component', () => {
 
     expect(window.alert).toHaveBeenCalledWith('Logged out successfully!');
     expect(localStorage.getItem('authToken')).toBeNull();
+    expect(localStorage.getItem('userName')).toBeNull();
     expect(screen.getByPlaceholderText('Username')).toHaveValue('');
     expect(screen.getByPlaceholderText('Password')).toHaveValue('');
+  });
+
+  test('shows network error on login failure due to server issues', async () => {
+    render(<Login />);
+
+    (fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+
+    fireEvent.change(screen.getByPlaceholderText('Username'), { target: { value: 'testuser' } });
+    fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByText('Login'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Network error. Please try again later.')).toBeInTheDocument();
+    });
   });
 });
