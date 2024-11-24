@@ -2,53 +2,46 @@ import PackageService from "../services/packageService";
 import { Request, Response } from "express";
 import { z } from "zod";
 
-// Define the schema for validating the regex query
+// Schema for validating the regex query
 const RegexQuerySchema = z.object({
-  regex: z.string().nonempty(), // Ensure it's a non-empty string
+  RegEx: z.string().nonempty(), // Ensure the regex is a non-empty string
 });
 
 type ValidRegexQuery = z.infer<typeof RegexQuerySchema>;
 
+// Function to validate the regex query
 function validateRegexQuery(query: unknown): ValidRegexQuery {
   const validatedQuery = RegexQuerySchema.safeParse(query);
+
   if (!validatedQuery.success) {
     throw new Error("Invalid regex query");
   }
+
+  // Test if the regex is valid
   try {
-    new RegExp(validatedQuery.data.regex); // Test if the regex is valid
+    new RegExp(validatedQuery.data.RegEx); // Throws an error if the regex is invalid
   } catch (err) {
     throw new Error("Invalid regex");
   }
+
   return validatedQuery.data;
 }
 
-export default async function searchByRegEx(req: Request, res: Response) {
+export default async function searchByRegex(req: Request, res: Response) {
   try {
-    // Validate the query from the request body
-    const { regex } = validateRegexQuery(req.body);
+    // Validate the regex query from the request body
+    console.log(req.body);
+    const { RegEx } = validateRegexQuery(req.body);
 
-    // Parse pagination (offsets) from the query parameters
-    const requestOffset = req.query ? req.query.offset : null;
-    const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
-    if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {
-      res.status(400).send("Invalid request");
-      return;
-    }
 
-    const queryOffset = parseInt(splitOffset[0]);
-    const semverOffset = splitOffset.length > 1 ? parseInt(splitOffset[1]) : 0;
-    if (queryOffset < 0 || semverOffset < 0) {
-      res.status(200).send([]);
-      return;
-    }
+    // Query the database using PackageService
+    const result = await PackageService.getPackagesByRegex(RegEx);
+    console.log(result);
 
-    // Query the database via the PackageService
-    const result = await PackageService.getPackagesByRegex(regex, queryOffset, semverOffset);
-
-    // Set headers and send response
-    res.header("offset", `${result[0]}-${result[1]}`);
-    res.status(200).send(result[2]);
+    // Return the result as the response
+    res.status(200).send(result);
   } catch (err) {
+    // Handle validation or query errors
     res.status(400).send("Invalid request");
   }
 }

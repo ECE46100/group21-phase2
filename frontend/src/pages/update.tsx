@@ -43,6 +43,8 @@ const UpdatePage: React.FC = () => {
 
   const handleSearch = async (pageOffset: number = 0) => {
     setError(null);
+    setSearchPerformed(false);
+    setPackages([]); // Clear previous results before searching
 
     if (!authToken) {
       alert('Authentication token is missing. Please log in.');
