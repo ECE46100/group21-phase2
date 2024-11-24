@@ -5,7 +5,7 @@ interface AuthForm {
   username: string;
   password: string;
 }
-
+const backendPort = '';
 const Login: React.FC = () => {
   const [formData, setFormData] = useState<AuthForm>({ username: '', password: '' });
   const [error, setError] = useState<string | null>(null);
@@ -22,19 +22,20 @@ const Login: React.FC = () => {
     setError(null); // Reset any previous errors
     try {
       console.log('Attempting login with:', formData);
+      console.log(`password : ${formData.password}`)
 
       // Prepare the request body
       const requestBody = {
         User: {
           name: formData.username,
-          isAdmin: false,
+          isAdmin: true,
         },
         Secret: {
           password: formData.password,
         },
       };
 
-      const response = await fetch('http://localhost:5000/authenticate', {
+      const response = await fetch(backendPort + '/authenticate', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -46,11 +47,12 @@ const Login: React.FC = () => {
       //   const token  = "bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
       if (response.status === 200) {
         console.log(response);
-        const allData= await response.json();
-        const token = allData.token;
+        // const allData= await response.json();
+        const token = await response.text();
         alert('Login successful!');
         setIsLoggedIn(true);
         localStorage.setItem('authToken', token); // Store the token for future use
+        localStorage.setItem('userName', formData.username);
       } else if (response.status === 400) {
         setError('Missing fields or improperly formed request.');
       } else if (response.status === 401) {
@@ -70,7 +72,7 @@ const Login: React.FC = () => {
   const handleSignUp = async () => {
     try {
       console.log('Attempting sign-up with:', formData);
-      const response = await fetch('http://localhost:5000/user', {
+      const response = await fetch(backendPort + '/user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,12 +97,12 @@ const Login: React.FC = () => {
   const handleLogout = async () => {
     try {
       
-      alert('Logged out successfully!');
+      console.log('Attempting logout...');
       setIsLoggedIn(false);
       setFormData({ username: '', password: '' });
-      localStorage.removeItem('authToken'); // Clear the token
-      console.log('Attempting logout...');
-      // const response = await fetch('http://localhost:5000/logout', {
+      localStorage.clear()
+      alert('Logged out successfully!');
+      // const response = await fetch(backendPort + '/logout', {
       //   method: 'GET',
       // });
 
@@ -122,7 +124,7 @@ const Login: React.FC = () => {
     <div className="login-block">
       {localStorage.getItem('authToken') ? (
         <div>
-          <h2>Welcome, {formData.username}!</h2>
+          <h2>Welcome, {localStorage.getItem('userName')}!</h2>
           <button onClick={handleLogout}>Logout</button>
         </div>
       ) : (
