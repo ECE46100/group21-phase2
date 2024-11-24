@@ -10,6 +10,10 @@ class PackageService {
     return packageObj ? packageObj.ID : null;
   }
 
+  public async getPackageByID(packageID: number): Promise<Package | null> {
+    return await Package.findByPk(packageID);
+  }  
+
   public async getPackageName(packageID: number): Promise<string | null> {
     const packageObj = await Package.findByPk(packageID);
     return packageObj ? packageObj.name : null;
@@ -18,6 +22,13 @@ class PackageService {
   public async getPackageVersion(versionID: number): Promise<Version | null> {
     return await Version.findByPk(versionID);
   }
+
+  public async getAllVersions(packageID: number): Promise<Version[]> {
+    return await Version.findAll({
+      where: { packageID },
+      order: [['createdAt', 'ASC']],
+    });
+  }  
 
   public async getVersionID(packageID: number, version: string): Promise<number | null> {
     const versionObj = await Version.findOne({ where: { packageID, version } });

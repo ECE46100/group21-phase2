@@ -15,14 +15,15 @@ const UpdatePage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [debloat, setDebloat] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState<string>(''); // Added for URL-based update
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Pagination state
   const [offset, setOffset] = useState<number>(0);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
 
-  // check if Search performed
+  // Check if Search performed
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
 
   // Retrieve auth token from localStorage on component mount
@@ -53,34 +54,12 @@ const UpdatePage: React.FC = () => {
         },
         body: JSON.stringify(requestBody),
       });
-      
-      // const response1 = JSON.stringify({
-      //   status: 200,
-      //   data: [
-      //     {
-      //       Name: 'example-package',
-      //       Version: '1.0.0',
-      //       ID: '1',
-      //     },
-      //     {
-      //       Name: 'another-package',
-      //       Version: '2.0.1',
-      //       ID: '2',
-      //     },
-      //   ],
-      //   headers: {
-      //     offset: '10',
-      //   },
-      // });
-      // const response = JSON.parse(response1);
 
       if (response.status === 200) {
-        const allData= await response.json();
-        const data: PackageMetadata[]  = allData.data
-        // const data = response.data;
+        const allData = await response.json();
+        const data: PackageMetadata[] = allData.data;
         setPackages(data);
 
-        // Set offset and check if there's a next page based on returned data
         setOffset(pageOffset);
         setHasNextPage(data.length > 0);
         setSearchPerformed(true);
@@ -120,6 +99,7 @@ const UpdatePage: React.FC = () => {
         setFile(null);
       } else {
         setFile(selectedFile);
+        setUrl(''); // Clear URL when a file is selected
       }
     }
   };
@@ -127,40 +107,54 @@ const UpdatePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
-      alert('Please select a file to upload.');
-      return;
-    }
-
     if (!authToken || !selectedPackage) {
       alert('Authentication token is missing or no package selected. Please log in or select a package.');
       return;
     }
 
     try {
-      const fileContent = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result.split(',')[1]);
-          }
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
-      });
-
-      const payload = {
+      let payload: any = {
         metadata: {
           Name: selectedPackage.Name,
           Version: newVersion,
           ID: selectedPackage.ID,
         },
-        data: {
-          Name: selectedPackage.Name,
-          Content: fileContent,
-          debloat: debloat,
-        },
+        data: {},
       };
+
+      if (file) {
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result.split(',')[1]);
+            }
+          };
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file);
+        });
+
+        payload.data = {
+          Content: fileContent,
+          Name: selectedPackage.Name,
+          debloat: debloat,
+        };
+      } else if (url) {
+        payload.data = {
+          URL: url,
+          Name: selectedPackage.Name,
+          JSProgram: `if (process.argv.length === 7) {
+            console.log('Success');
+            process.exit(0);
+          } else {
+            console.log('Failed');
+            process.exit(1);
+          }`,
+        };
+      } else {
+        alert('Please provide either a file or a URL for the update.');
+        return;
+      }
 
       const response = await fetch(`/package/${selectedPackage.ID}`, {
         method: 'POST',
@@ -184,7 +178,6 @@ const UpdatePage: React.FC = () => {
 
   return (
     <PageLayout title="Update a Package">
-      {/* Search Section */}
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
@@ -225,7 +218,6 @@ const UpdatePage: React.FC = () => {
             <p>No packages found. Try a different search term.</p>
           )}
 
-          {/* Pagination Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
             <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
               Previous Page
@@ -238,7 +230,6 @@ const UpdatePage: React.FC = () => {
         </div>
       )}
 
-      {/* Update Form - only shown if a package is selected */}
       {selectedPackage && (
         <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '30px auto' }}>
           <div style={{ marginBottom: '15px' }}>
@@ -292,8 +283,22 @@ const UpdatePage: React.FC = () => {
               <input
                 type="file"
                 onChange={handleFileChange}
-                required
                 style={{ display: 'block', marginTop: '5px' }}
+              />
+            </label>
+          </div>
+          <div style={{ marginBottom: '15px' }}>
+            <label>
+              Or Provide URL for the Update:
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setFile(null); // Clear file when a URL is provided
+                }}
+                placeholder="https://example.com/package.zip"
+                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
               />
             </label>
           </div>
