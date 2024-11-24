@@ -11,7 +11,7 @@ import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 const router = Router();
 
 router.post('/packages', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  console.log('in router POST /packages'); //delete me
+  // console.log('in router POST /packages'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
@@ -21,6 +21,7 @@ router.post('/packages', authMiddleware, permMiddleware, async (req: Request, re
 
 router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the packages by regular expression from the database
+  // console.log('in router POST /packages/byRegEx'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
@@ -33,7 +34,7 @@ router.delete('/reset', (req: Request, res: Response) => {
 });
 
 router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  console.log('in router GET /package/:id'); //delete me
+  // console.log('in router GET /package/:id'); //delete me
   if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
@@ -42,7 +43,7 @@ router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, 
 });
 
 router.put('/package/:id', (req: Request, res: Response) => {
-  console.log('in router PUT /package/:id'); //delete me
+  // console.log('in router PUT /package/:id'); //delete me
   const id = req.params.id;
   // TODO: Implement the logic to update the package by id in the database
 });

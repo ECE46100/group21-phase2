@@ -24,20 +24,20 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 
   const validatedPackageQuery: ValidPackageQuery[] = [];
 
-  for (const q of query) { // perhaps cause error when empty result  
+  for (const q of query) {
     const validatedQuery = PackageQuerySchema.safeParse(q);
-    console.log(`in searchPackages.ts/checkPackageQuery(), query is safe`); // delete this
+    // console.log(`in searchPackages.ts/checkPackageQuery(), query is safe`); // delete this
     if (!validatedQuery.success) {
       throw new Error("Invalid query");
     }
-    console.log(`in searchPackages.ts/checkPackageQuery(), version in query : ${validatedQuery.data.Version}`); // delete this
+    // console.log(`in searchPackages.ts/checkPackageQuery(), version in query : ${validatedQuery.data.Version}`); // delete this
     if (!validSemVerRegex.exec(validatedQuery.data.Version)) {
       
-    console.log(`in searchPackages.ts/checkPackageQuery(), version exec invalid`); // delete this
+    // console.log(`in searchPackages.ts/checkPackageQuery(), version exec invalid`); // delete this
       throw new Error("Invalid query");
     }
     validatedPackageQuery.push(validatedQuery.data);
-    console.log(`in searchPackages.ts/checkPackageQuery(), name in query : ${validatedQuery.data.Name}`); // delete this
+    // console.log(`in searchPackages.ts/checkPackageQuery(), name in query : ${validatedQuery.data.Name}`); // delete this
   }
   return validatedPackageQuery;
 }
@@ -58,7 +58,7 @@ export default async function searchPackages(req: Request, res: Response) {
     return;
   }
   try {
-    const packageQueries = checkPackageQuery(req.body); // perhaps cause error when no result
+    const packageQueries = checkPackageQuery(req.body);
 
     const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset);
     res.header("offset", `${result[0]}-${result[1]}`);
