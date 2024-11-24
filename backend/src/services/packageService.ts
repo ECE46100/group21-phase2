@@ -61,13 +61,16 @@ class PackageService {
 
     let matchingPackagesCount = 0;
     const result : [number, number, PackageSearchResult[]] = [queryOffset, semverOffset, []];
+    
 
     while (matchingPackagesCount < 50) {
       const versions = await Version.findAndCountAll(query);
+      console.log(versions);
 
       if (versions.count === 0 || versions.rows.length === 0) {
         result[0] = -1;
         result[1] = -1;
+        console.log(result);
         return result;
       }
 
@@ -106,61 +109,43 @@ class PackageService {
     }
   }
 
-  /**
-   * Get packages that match a regex pattern in their name or description.
-   *
-   * @param regex - The regex pattern as a string.
-   * @param queryOffset - Offset for pagination.
-   * @param semverOffset - Semver-based offset for finer pagination.
-   * @returns A tuple: [queryOffset, semverOffset, matching packages].
-   */
-  public async getPackagesByRegex(regex: string, queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
+  public async getPackagesByRegex(regex: string): Promise<PackageSearchResult[]> {
     const regexObj = new RegExp(regex, "i"); // Case-insensitive regex
-    const result: [number, number, PackageSearchResult[]] = [queryOffset, semverOffset, []];
-    const matchingPackagesCount = 50;
-
+  
     try {
-      // Query the database for matching packages
-      const matchingPackages = await Package.findAndCountAll({
+      // Query packages where the name matches the regex
+
+      const matchingPackages = await Package.findAll({
         where: {
-          [Op.or]: [
-            { name: { [Op.regexp]: regexObj.source } }
-          ]
+          name: { [Op.regexp]: regexObj.source },
         },
-        offset: queryOffset * matchingPackagesCount,
-        limit: matchingPackagesCount,
-        order: [['createdAt', 'ASC']]
+        order: [["createdAt", "ASC"]],
       });
 
-      // Map the results to include versions and semver pagination
-      for (const pkg of matchingPackages.rows) {
-        const versions = await Version.findAll({
-          where: { packageID: pkg.ID },
-          order: [['createdAt', 'ASC']],
-          offset: semverOffset,
-          limit: matchingPackagesCount
-        });
-
+  
+      // Fetch versions for each package and map the result
+      const result: PackageSearchResult[] = [];
+      for (const pkg of matchingPackages) {
+        const versions = await this.getAllVersions(pkg.ID); // Fetch all versions for the package
+  
+        // Map each version as a separate result
         for (const version of versions) {
-          result[2].push({
-            ID: version.ID.toString(),
+          result.push({
+            ID: pkg.ID.toString(),
             Name: pkg.name,
-            Version: version.version
+            Version: version.version, // Include the version
           });
         }
       }
-
-      // Return updated offsets and the results
-      result[0] += matchingPackages.rows.length > 0 ? 1 : 0;
-      result[1] += semverOffset + matchingPackages.rows.length;
+  
+      return result;
     } catch (err) {
-      console.error("Error fetching packages by regex:", err);
-      result[0] = -1; // Indicates failure
-      result[1] = -1;
+      console.error("Error in getPackagesByRegex:", err);
+      throw new Error("Failed to retrieve packages");
     }
-
-    return result;
   }
+  
+  
 
   public async createVersion(versionObj: VersionCreationAttributes): Promise<boolean> {
     if (await Version.findOne({ where: { version: versionObj.version, packageID: versionObj.packageID } })) {

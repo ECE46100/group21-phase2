@@ -43,6 +43,8 @@ const UpdatePage: React.FC = () => {
 
   const handleSearch = async (pageOffset: number = 0) => {
     setError(null);
+    setSearchPerformed(false);
+    setPackages([]);
 
     if (!authToken) {
       alert('Authentication token is missing. Please log in.');
@@ -91,8 +93,10 @@ const UpdatePage: React.FC = () => {
 
         if (response.status === 200) {
           const allData = await response.json();
-          const data: PackageMetadata[] = allData.data;
+          // console.log(allData);
+          const data: PackageMetadata[] = allData;
           setPackages(data);
+
 
           setOffset(pageOffset);
           setSearchPerformed(true);

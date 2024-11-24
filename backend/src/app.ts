@@ -63,11 +63,17 @@ router.post('/package/:id/cost', (req: Request, res: Response) => {
 });
 
 router.put('/authenticate', async (req: Request, res: Response) => {
+  console.log("hi");
   return await authenticate(req, res);
 });
 
-router.post('/package/byRegEx', (req: Request, res: Response) => {
+router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the packages by regular expression from the database
+  if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
+    res.status(403).send('Unauthorized - missing permissions');
+    return;
+  }
+  return await searchByRegEx(req, res);
 });
 
 router.get('/track', (req: Request, res: Response) => {
