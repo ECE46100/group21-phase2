@@ -33,6 +33,14 @@ sequelize.sync({ force: true })
       contentUpload: true,
     });
     await Version.create({
+      packageID: 100,
+      version: "1.2.3",
+      packageUrl: "https://reactjs.org/",
+      author: "Facebook",
+      accessLevel: "public",
+      programPath: "none",
+    });
+    await Version.create({
       packageID: 1,
       version: "1.2.3",
       packageUrl: "https://reactjs.org/",

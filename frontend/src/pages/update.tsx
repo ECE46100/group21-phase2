@@ -9,13 +9,14 @@ interface PackageMetadata {
 
 const UpdatePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [versionTerm, setVersionTerm] = useState(''); // For searching by version (only for name-based search)
   const [packages, setPackages] = useState<PackageMetadata[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PackageMetadata | null>(null);
   const [newVersion, setNewVersion] = useState('');
   const [description, setDescription] = useState('');
   const [debloat, setDebloat] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState<string>(''); // Added for URL-based update
+  const [url, setUrl] = useState<string>(''); // For URL-based updates
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +24,6 @@ const UpdatePage: React.FC = () => {
   const [offset, setOffset] = useState<number>(0);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
 
-  // Check if Search performed
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
 
   // Retrieve auth token from localStorage on component mount
@@ -32,9 +32,14 @@ const UpdatePage: React.FC = () => {
     if (token) {
       setAuthToken(token);
     } else {
-      console.log('no token set while entered update');
+      console.log('No token set while entering update');
     }
   }, []);
+
+  const isRegexSearch = (term: string): boolean => {
+    const regexSpecialChars = /[.*+?^${}()|[\]\\]/;
+    return regexSpecialChars.test(term);
+  };
 
   const handleSearch = async (pageOffset: number = 0) => {
     setError(null);
@@ -45,26 +50,55 @@ const UpdatePage: React.FC = () => {
     }
 
     try {
-      const requestBody = [{ Name: searchTerm }];
-      const response = await fetch(`/packages?offset=${pageOffset}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Authorization': authToken,
-        },
-        body: JSON.stringify(requestBody),
-      });
+      if (isRegexSearch(searchTerm)) {
+        // Search with regex
+        const requestBody = { RegEx: searchTerm };
+        console.log(`searching with regex, RegEx : ${searchTerm}`);
+        const response = await fetch('/package/byRegEx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Authorization': authToken,
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-      if (response.status === 200) {
-        const allData = await response.json();
-        const data: PackageMetadata[] = allData.data;
-        setPackages(data);
-
-        setOffset(pageOffset);
-        setHasNextPage(data.length > 0);
-        setSearchPerformed(true);
+        if (response.status === 200) {
+          const data: PackageMetadata[] = await response.json();
+          setPackages(data);
+          setHasNextPage(false); // Pagination is not applicable for regex searches
+          setSearchPerformed(true);
+        } else if (response.status === 404) {
+          setPackages([]);
+          alert('No packages found with the given regex.');
+        } else {
+          setError('Search failed with an unknown error.');
+        }
       } else {
-        setError('Search failed with an unknown error.');
+        // Search by name and version
+        const requestBody = [
+          { Name: searchTerm, Version: versionTerm ? versionTerm : '*' },
+        ];
+        console.log(`searching with name, requestbody : ${searchTerm}, ${versionTerm? versionTerm:'*'}`);
+        const response = await fetch(`/packages?offset=${pageOffset}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Authorization': authToken,
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (response.status === 200) {
+          const allData = await response.json();
+          const data: PackageMetadata[] = allData.data;
+          setPackages(data);
+
+          setOffset(pageOffset);
+          setSearchPerformed(true);
+        } else {
+          setError('Search failed with an unknown error.');
+        }
       }
     } catch (err) {
       console.error('Error during search:', err);
@@ -72,10 +106,7 @@ const UpdatePage: React.FC = () => {
     }
   };
 
-  const handleNextPage = () => {
-    handleSearch(offset + 1);
-  };
-
+  const handleNextPage = () => handleSearch(offset + 1);
   const handlePreviousPage = () => {
     if (offset > 0) {
       handleSearch(offset - 1);
@@ -178,10 +209,11 @@ const UpdatePage: React.FC = () => {
 
   return (
     <PageLayout title="Update a Package">
+      {/* Search Section */}
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
-            Search for Package:
+            Search by Name or Regex:
             <input
               type="text"
               value={searchTerm}
@@ -191,23 +223,55 @@ const UpdatePage: React.FC = () => {
             />
           </label>
         </div>
+        {!isRegexSearch(searchTerm) && (
+          <div style={{ marginBottom: '15px' }}>
+            <label>
+              Version (Optional):
+              <input
+                type="text"
+                value={versionTerm}
+                onChange={(e) => setVersionTerm(e.target.value)}
+                placeholder="e.g., 1.2.3 or *"
+                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+              />
+            </label>
+          </div>
+        )}
         <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: '#fff', border: 'none', cursor: 'pointer' }}>
           Search
         </button>
       </form>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
+
       {searchPerformed && (
         <div style={{ marginTop: '30px' }}>
           <h3>Search Results:</h3>
-          {packages.length > 0 ? (
+          {Array.isArray(packages) && packages.length > 0 ? ( // Add explicit Array.isArray check
             <ul style={{ listStyleType: 'none', padding: '0' }}>
               {packages.map((pkg) => (
-                <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+                <li
+                  key={pkg.ID}
+                  style={{
+                    marginBottom: '15px',
+                    padding: '10px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    backgroundColor: '#f9f9f9',
+                  }}
+                >
                   <strong>{pkg.Name}</strong> (v{pkg.Version})
                   <button
                     onClick={() => handleSelectPackage(pkg)}
-                    style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    style={{
+                      marginLeft: '15px',
+                      padding: '5px 10px',
+                      backgroundColor: '#28a745',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                    }}
                   >
                     Select
                   </button>
@@ -218,18 +282,42 @@ const UpdatePage: React.FC = () => {
             <p>No packages found. Try a different search term.</p>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-            <button onClick={handlePreviousPage} disabled={offset === 0} style={{ padding: '8px 16px', marginRight: '10px', cursor: 'pointer' }}>
+          {/* Pagination Controls */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: '20px',
+            }}
+          >
+            <button
+              onClick={handlePreviousPage}
+              disabled={offset === 0}
+              style={{
+                padding: '8px 16px',
+                marginRight: '10px',
+                cursor: 'pointer',
+              }}
+            >
               Previous Page
             </button>
             <span style={{ margin: '0 15px' }}>Current Page: {offset + 1}</span>
-            <button onClick={handleNextPage} disabled={!hasNextPage} style={{ padding: '8px 16px', cursor: 'pointer' }}>
+            <button
+              onClick={handleNextPage}
+              disabled={!hasNextPage}
+              style={{
+                padding: '8px 16px',
+                cursor: 'pointer',
+              }}
+            >
               Next Page
             </button>
           </div>
         </div>
       )}
 
+
+      {/* Update Form */}
       {selectedPackage && (
         <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '30px auto' }}>
           <div style={{ marginBottom: '15px' }}>
@@ -295,7 +383,7 @@ const UpdatePage: React.FC = () => {
                 value={url}
                 onChange={(e) => {
                   setUrl(e.target.value);
-                  setFile(null); // Clear file when a URL is provided
+                  setFile(null);
                 }}
                 placeholder="https://example.com/package.zip"
                 style={{ width: '100%', padding: '8px', marginTop: '5px' }}
