@@ -16,7 +16,9 @@ const PackageQuerySchema = z.object({
 type ValidPackageQuery = z.infer<typeof PackageQuerySchema>;
 
 function checkPackageQuery(query: unknown): ValidPackageQuery[] {
-  const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
+  // const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
+  const validSemVerRegex = /^(?:\*|(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?)$/; // allow wildcard '*'(when no version is specified)
+
 
   if (!Array.isArray(query)) throw new Error("Invalid query");
 
@@ -24,13 +26,18 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 
   for (const q of query) {
     const validatedQuery = PackageQuerySchema.safeParse(q);
+    // console.log(`in searchPackages.ts/checkPackageQuery(), query is safe`); // delete this
     if (!validatedQuery.success) {
       throw new Error("Invalid query");
     }
+    // console.log(`in searchPackages.ts/checkPackageQuery(), version in query : ${validatedQuery.data.Version}`); // delete this
     if (!validSemVerRegex.exec(validatedQuery.data.Version)) {
+      
+    // console.log(`in searchPackages.ts/checkPackageQuery(), version exec invalid`); // delete this
       throw new Error("Invalid query");
     }
     validatedPackageQuery.push(validatedQuery.data);
+    // console.log(`in searchPackages.ts/checkPackageQuery(), name in query : ${validatedQuery.data.Name}`); // delete this
   }
   return validatedPackageQuery;
 }
@@ -38,7 +45,6 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 export default async function searchPackages(req: Request, res: Response) {
   const requestOffset = req.query ? req.query.offset : null;
   const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
-  
   if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {
     res.status(400).send("Invalid request");
     return;

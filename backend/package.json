@@ -8,7 +8,10 @@
   "scripts": {
     "test": "npx jest",
     "test:cov": "npx jest --coverage",
-    "test:ci": "npx jest --ci"
+    "test:ci": "npx jest --ci",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server",
+    "clean": "rm -rf dist"
   },
   "author": "",
   "license": "ISC",

@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    name: deploy
+    runs-on: ubuntu-latest
+      
+    steps:
+      - name: fetch code
+        uses: actions/checkout@v4
+
+      - name: install dependencies
+        run: npm install
+        working-directory: backend
+
+      - name: compile to js
+        run: npx tsc
+        working-directory: backend
+
+      - name: deploy with rsync
+        uses: burnett01/rsync-deployments@5.1
+        with:
+          switches: -avzr --delete
+          path: ./*
+          remote_path: ~/app_deployment
+          remote_host: ${{ secrets.SSH_HOST }}
+          remote_user: ${{ secrets.SSH_USER }}
+          remote_key: ${{ secrets.SSH_KEY }}
+          
+      - name: configure env and run
+        run: |
+          echo "${{ secrets.SSH_KEY }}" > private_key && 
+          chmod 600 private_key &&
+          ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
+
+            cd ~/app_deployment/backend &&
+            # configure env
+            touch .env &&
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env &&
+            echo DB_USER=${{ secrets.DB_USER }} >> .env &&
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env &&
+            echo DB_PASS=${{ secrets.DB_PASS }} >> .env &&
+
+            echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env &&
+            echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env &&
+            echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
+            '
+
+          
+          
+          

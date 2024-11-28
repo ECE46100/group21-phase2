@@ -16,7 +16,7 @@ Package.init({
   ID: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
-    primaryKey: true
+    primaryKey: true,
   },
   name: {
     type: new DataTypes.STRING(128),

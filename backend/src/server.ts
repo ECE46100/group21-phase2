@@ -6,7 +6,8 @@ import router from "./app";
 import express from "express";
 
 const app = express();
-app.use(express.json());
+// app.use(express.json());
+app.use(express.json({ limit: "100mb" })); // otherwise we get 413 payload too large
 app.use(router);
 
 app.listen(3000, () => {
@@ -17,7 +18,7 @@ sequelize.sync({ force: true })
   .then(async () => {
     const defaultCreated = await UserService.createUser({
       username: "ece30861defaultadminuser",
-      password: "correcthorsebatterystaple123(!__+@**(A'\\\"`;DROP TABLE packages;",
+      password: "correcthorsebatterystaple123(!__+@**(A'\\\"`;DROP TABLE packages;", //we need to escape \ itself
       adminPerm: true,
       searchPerm: true,
       downloadPerm: true,
@@ -30,6 +31,14 @@ sequelize.sync({ force: true })
     await Package.create({
       name: "React",
       contentUpload: true,
+    });
+    await Version.create({
+      packageID: 100,
+      version: "1.2.3",
+      packageUrl: "https://reactjs.org/",
+      author: "Facebook",
+      accessLevel: "public",
+      programPath: "none",
     });
     await Version.create({
       packageID: 1,
