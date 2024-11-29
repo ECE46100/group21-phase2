@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler  from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar, readPackageZip } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip } from '../utils/packageFileUtils';
 import { z } from 'zod';
 
 const ContentRequestSchema = z.object({
@@ -46,9 +46,14 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageUrl: '',
       });
       const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
+      
       // Write the package to the file system
-      // TODO: Implement the debloat functionality
-      writePackageZip(packageID!, versionID!, contentRequest.Content);
+      if (contentRequest.debloat) {
+        debloatPackageZip(packageID!, versionID!, contentRequest.Content);
+      } else {
+        writePackageZip(packageID!, versionID!, contentRequest.Content);
+      }
+
       const response = {
         metadata: {
           Name: name,

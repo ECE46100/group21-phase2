@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import { extract } from 'tar';
+import { execSync } from 'child_process';
 
 const packageDir = path.join(__dirname, '..', '..', 'packages');
 const unzippedDir = path.join(__dirname, '..', '..', 'unzipped');
@@ -111,6 +112,12 @@ export function readPackageZip(packageID: number, versionID: number): string {
   }
 }
 
+/**
+ * Converts a tar file to a zip file and writes it to the packages directory
+ * @param packageID: number
+ * @param versionID: number
+ * @param tarFile: Buffer
+ */
 export async function writeZipFromTar(packageID: number, versionID: number, tarFile: Buffer): Promise<void> {
   const unzippedPath = path.join(unzippedDir, `${packageID}-${versionID}`);
   const conversionPath = path.join(conversionDir, `${packageID}-${versionID}.tar.gz`);
@@ -128,6 +135,58 @@ export async function writeZipFromTar(packageID: number, versionID: number, tarF
 
     fs.rmSync(conversionPath);
     fs.rmSync(unzippedPath, { recursive: true, force: true });
+  } catch (err: unknown) {
+    throw new Error(err as string);
+  }
+}
+
+/**
+ * Takes a package zip file and performs tree shaking to remove uneeded dependencies
+ * @param packageID: number
+ * @param versionID: number
+ * @param packageZip: string
+ */
+export function debloatPackageZip(packageID: number, versionID: number, packageZip: string): undefined {
+  try {
+    writePackageZip(packageID, versionID, packageZip);
+    const unzippedPath = unzipPackage(packageID, versionID);
+    const depcheckOutput = execSync(`npx depcheck ${unzippedPath} --json`, { encoding: 'utf-8' });
+
+    const result = JSON.parse(depcheckOutput) as { dependencies: string[]; devDependencies: string[] };
+
+    const unusedDeps = Array.isArray(result.dependencies) ? result.dependencies : [];
+    const unusedDevDeps = Array.isArray(result.devDependencies) ? result.devDependencies : [];
+
+    const eslintOutput = execSync(`npx eslint ${unzippedPath} --ext .js,.ts --fix --quiet`, {
+        encoding: 'utf-8',
+    });
+
+    const usedRequires = new Set();
+    const requireRegex = /\brequire\(['"`](.*?)['"`]\)/g;
+    
+    eslintOutput.split('\n').forEach((line) => {
+        let match;
+        while ((match = requireRegex.exec(line)) !== null) {
+            usedRequires.add(match[1]);
+        }
+    });
+    
+    const packageJsonPath = path.join(unzippedPath, 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+
+    for (const dep of unusedDeps) {
+        if (!usedRequires.has(dep)) {
+            delete packageJson.dependencies[dep];
+        }
+    }
+
+    for (const dep of unusedDevDeps) {
+      delete packageJson.devDependencies[dep];
+    }
+
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    const zippedPackage = zipPackage(unzippedPath);
+    writePackageZip(packageID, versionID, zippedPackage);
   } catch (err: unknown) {
     throw new Error(err as string);
   }
