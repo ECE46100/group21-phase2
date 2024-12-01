@@ -46,7 +46,7 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageUrl: '',
       });
       const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
-      
+
       // Write the package to the file system
       if (contentRequest.debloat) {
         debloatPackageZip(packageID!, versionID!, contentRequest.Content);
