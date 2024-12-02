@@ -102,12 +102,12 @@ class PackageService {
     return result;
   }
 
-  public async createPackage(packageObj: PackageCreationAttributes): Promise<boolean> {
+  public async createPackage(packageObj: PackageCreationAttributes): Promise<undefined> {
     try {
       await Package.create(packageObj);
-      return true;
+      return;
     } catch (err) {
-      return false;
+      throw new Error(err as string);
     }
   }
 
@@ -147,18 +147,16 @@ class PackageService {
     }
   }
   
-  
-
-  public async createVersion(versionObj: VersionCreationAttributes): Promise<boolean> {
+  public async createVersion(versionObj: VersionCreationAttributes): Promise<undefined> {
     if (await Version.findOne({ where: { version: versionObj.version, packageID: versionObj.packageID } })) {
-      return false;
+      throw new Error("Version already exists");
     }
 
     try {
       await Version.create(versionObj);
-      return true;
+      return;
     } catch (err) {
-      return false;
+      throw new Error(err as string);
     }
   }
 }

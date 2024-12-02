@@ -5,6 +5,7 @@ import authenticate from './controllers/authenticate';
 import searchPackages from './controllers/searchPackages';
 import downloadPackage from './controllers/downloadPackage';
 import searchByRegEx from './controllers/searchByRegEx'
+import uploadPackage from './controllers/uploadPackage';
 
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 
@@ -48,11 +49,15 @@ router.put('/package/:id', (req: Request, res: Response) => {
   // TODO: Implement the logic to update the package by id in the database
 });
 
-router.post('/package', (req: Request, res: Response) => {
-  // TODO: Implement the logic to create a new package in the database
+router.post('/package', async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.uploadPerm && !req.middleware.permissions.adminPerm) {
+    res.status(403).send('Unauthorized - missing permissions');
+    return;
+  }
+  return await uploadPackage(req, res);
 });
 
-router.get('/pakcage/:id/rate', (req: Request, res: Response) => {
+router.get('/package/:id/rate', (req: Request, res: Response) => {
   const id = req.params.id;
   // TODO: Implement the logic to fetch the rating of the package by id from the database
 });
@@ -79,5 +84,19 @@ router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Requ
 router.get('/track', (req: Request, res: Response) => {
   // TODO: Implement the logic to return the track
 });
+
+router.delete('/deleteUser', (req: Request, res: Response) => {
+  // TODO: Implement the logic to delete the user
+});
+
+router.post('/createUser', (req: Request, res: Response) => {
+  // TODO: Implement the logic to create the user
+});
+
+router.get('/uploadHistory/:id', (req: Request, res: Response) => {
+  // TODO: Implement the logic to fetch the upload history by id
+});
+
+router.get
 
 export default router;

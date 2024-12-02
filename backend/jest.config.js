@@ -3,5 +3,6 @@ module.exports = {
   preset: 'ts-jest',
   transform: {
     '^.+\\.(ts|tsx)?$': 'ts-jest',
-  }
+  },
+  modulePathIgnorePatterns: ["group21-phase1-handoff"],
 };
