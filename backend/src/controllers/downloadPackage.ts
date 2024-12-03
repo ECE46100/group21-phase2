@@ -3,9 +3,10 @@ import PackageService from '../services/packageService';
 import { readPackageZip } from '../utils/packageFileUtils';
 
 export default async function downloadPackage(req: Request, res: Response) {
-  const { IDStr } = req.params;
+  const IDStr = req.params.id;
 
   if (!IDStr || Number.isNaN(IDStr)) {
+    console.log(`in downloadPackage.ts/downloadPackage(), IDStr = ${IDStr? IDStr : 'missing'}`);
     res.status(400).send('Invalid request');
     return;
   }
@@ -24,7 +25,7 @@ export default async function downloadPackage(req: Request, res: Response) {
     const packageZip = readPackageZip(versionObj.packageID, versionObj.ID);
     res.status(200).send({
       metadata: {
-        Name: PackageService.getPackageName(versionObj.packageID),
+        Name: await PackageService.getPackageName(versionObj.packageID),
         Version: versionObj.version,
         ID: IDStr,
       },

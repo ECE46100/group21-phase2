@@ -133,7 +133,8 @@ class PackageService {
         // Map each version as a separate result
         for (const version of versions) {
           result.push({
-            ID: pkg.ID.toString(),
+            // ID: pkg.ID.toString(),
+            ID: version.ID.toString(), // should return versionID
             Name: pkg.name,
             Version: version.version, // Include the version
           });

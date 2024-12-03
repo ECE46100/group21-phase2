@@ -32,13 +32,13 @@ sequelize.sync({ force: true })
       name: "React",
       contentUpload: true,
     });
-    await Version.create({
-      packageID: 100,
-      version: "1.2.3",
-      packageUrl: "https://reactjs.org/",
-      author: "Facebook",
-      accessLevel: "public",
-      programPath: "none",
+    await Package.create({
+      name: "Lodash",
+      contentUpload: true,
+    });
+    await Package.create({
+      name: "UnderScore",
+      contentUpload: true,
     });
     await Version.create({
       packageID: 1,
@@ -48,26 +48,27 @@ sequelize.sync({ force: true })
       accessLevel: "public",
       programPath: "none",
     });
-    await Package.create({
-      name: "Lodash",
-      contentUpload: true,
+    await Version.create({
+      ID: 100,
+      packageID: 1,
+      version: "1.2.5",
+      packageUrl: "check if create with a specific versionID is possible(needed in update).",
+      author: "CLS",
+      accessLevel: "public",
+      programPath: "none",
     });
     await Version.create({
       packageID: 2,
       version: "17.0.2",
-      packageUrl: "https://reactjs.org/",
+      packageUrl: "https://lodash.org/",
       author: "Facebook",
       accessLevel: "public",
       programPath: "none",
     });
-    await Package.create({
-      name: "UnderScore",
-      contentUpload: true,
-    });
     await Version.create({
       packageID: 3,
       version: "1.2.3",
-      packageUrl: "https://reactjs.org/",
+      packageUrl: "https://underscore.org/",
       author: "Facebook",
       accessLevel: "public",
       programPath: "none",

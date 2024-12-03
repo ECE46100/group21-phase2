@@ -21,7 +21,11 @@ declare module 'package-types' {
   }
   
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
+  // export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
+  // CLS modified the following since we might need to create version with a specific version ID in update
+  export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> { 
+    ID?: number; // Optional to allow for manual insertion
+  }
 
   /* Item in package search result */
   export interface PackageSearchResult {
