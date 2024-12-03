@@ -48,36 +48,40 @@ jobs:
           
       - name: configure env and run
         run: |
-          echo "${{ secrets.SSH_KEY }}" > private_key && 
-          chmod 600 private_key &&
+          echo "${{ secrets.SSH_KEY }}" > private_key 
+          chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
 
-            cd ~/app_deployment/backend &&
+            cd ~/app_deployment/backend
             # configure env
-            touch .env &&
-            echo DB_HOST=${{ secrets.DB_HOST }} >> .env &&
-            echo DB_USER=${{ secrets.DB_USER }} >> .env &&
-            echo DB_NAME=${{ secrets.DB_NAME }} >> .env &&
-            echo DB_PASS=${{ secrets.DB_PASS }} >> .env &&
+            touch .env
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+            echo DB_USER=${{ secrets.DB_USER }} >> .env
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+            echo DB_PASS=${{ secrets.DB_PASS }} >> .env
 
-            echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env &&
-            echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env &&
-            echo AWS_REGION='us-east-2' >> .env &&
-            echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env &&
+            echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env
+            echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env
+            echo AWS_REGION='us-east-2' >> .env
+            echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
 
-            cd ../frontend &&
-            touch .env &&
-            echo PORT=4000 >> .env &&
+            cd ../frontend
+            touch .env
+            echo PORT=4000 >> .env
 
-            cd ../backend &&
-            tmux kill-session -t backend 2>/dev/null; || true &&
-            tmux new-session -d -s backend &&
-            tmux send-keys -t backend 'npm run start' C-m &&
+            cd ../backend
+            if tmux has-session -t backend 2>/dev/null; then
+              tmux kill-session -t backend
+            fi
+            tmux new-session -d -s backend
+            tmux send-keys -t backend 'npm run start' C-m
 
-            cd ../frontend &&
-            tmux kill-session -t frontend 2>/dev/null; || true &&
-            tmux new-session -d -s frontend &&
-            tmux send-keys -t frontend 'npm run start' C-m &&
+            cd ../frontend
+            if tmux has-session -t frontend 2>/dev/null; then
+              tmux kill-session -t frontend
+            fi
+            tmux new-session -d -s frontend
+            tmux send-keys -t frontend 'npm run start' C-m
             '
 
           
