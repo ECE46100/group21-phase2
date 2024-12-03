@@ -6,6 +6,7 @@ import searchPackages from './controllers/searchPackages';
 import downloadPackage from './controllers/downloadPackage';
 import searchByRegEx from './controllers/searchByRegEx'
 import uploadPackage from './controllers/uploadPackage';
+import reset from './controllers/reset';
 
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 
@@ -14,7 +15,7 @@ const router = Router();
 router.post('/packages', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // console.log('in router POST /packages'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
-    res.status(403).send('Unauthorized - missing permissions');
+    res.status(401).send('Unauthorized - missing permissions');
     return;
   }
   return await searchPackages(req, res);
@@ -24,20 +25,24 @@ router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Requ
   // TODO: Implement the logic to fetch the packages by regular expression from the database
   // console.log('in router POST /packages/byRegEx'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
-    res.status(403).send('Unauthorized - missing permissions');
+    res.status(401).send('Unauthorized - missing permissions');
     return;
   }
   return await searchByRegEx(req, res);
 });
 
-router.delete('/reset', (req: Request, res: Response) => {
-  // TODO: Implement the logic to reset the database
+router.delete('/reset', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(401).send('Unauthorized - missing permissions');
+    return;
+  }
+  return await reset(req, res);
 });
 
 router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // console.log('in router GET /package/:id'); //delete me
   if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
-    res.status(403).send('Unauthorized - missing permissions');
+    res.status(401).send('Unauthorized - missing permissions');
     return;
   }
   return await downloadPackage(req, res);
@@ -51,7 +56,7 @@ router.put('/package/:id', (req: Request, res: Response) => {
 
 router.post('/package', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   if (!req.middleware.permissions.uploadPerm && !req.middleware.permissions.adminPerm) {
-    res.status(403).send('Unauthorized - missing permissions');
+    res.status(401).send('Unauthorized - missing permissions');
     return;
   }
   return await uploadPackage(req, res);
@@ -68,14 +73,12 @@ router.post('/package/:id/cost', (req: Request, res: Response) => {
 });
 
 router.put('/authenticate', async (req: Request, res: Response) => {
-  console.log("hi");
   return await authenticate(req, res);
 });
 
 router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  // TODO: Implement the logic to fetch the packages by regular expression from the database
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
-    res.status(403).send('Unauthorized - missing permissions');
+    res.status(401).send('Unauthorized - missing permissions');
     return;
   }
   return await searchByRegEx(req, res);
@@ -96,7 +99,5 @@ router.post('/createUser', (req: Request, res: Response) => {
 router.get('/uploadHistory/:id', (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the upload history by id
 });
-
-router.get
 
 export default router;
