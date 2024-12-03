@@ -20,15 +20,15 @@ const s3Client = new S3Client({
   },
 });
 
-s3Client.send(
-  new CreateBucketCommand({ 
-    Bucket: "packages-group21" 
-  })
-).then((data) => 
-  console.log(data)
-).catch((error) =>
-  console.error(error)
-);
+// s3Client.send(
+//   new CreateBucketCommand({ 
+//     Bucket: "packages-group21" 
+//   })
+// ).then((data) => 
+//   console.log(data)
+// ).catch((error) =>
+//   console.error(error)
+// );
 
 export default s3Client;
 
