@@ -26,7 +26,7 @@ class PackageService {
 
   public async getAllVersions(packageID: number): Promise<Version[]> {
     return await Version.findAll({
-      where: { packageID },
+      where: { packageID: packageID },
       order: [['createdAt', 'ASC']],
     });
   }  
@@ -65,12 +65,10 @@ class PackageService {
 
     while (matchingPackagesCount < 50) {
       const versions = await Version.findAndCountAll(query);
-      console.log(versions);
-
+      
       if (versions.count === 0 || versions.rows.length === 0) {
         result[0] = -1;
         result[1] = -1;
-        console.log(result);
         return result;
       }
 
@@ -89,6 +87,10 @@ class PackageService {
           result[1]++;
         }
         if (matchingPackagesCount === 50) {
+          if (result[1] === 50) {
+            result[0]++;
+            result[1] = 0;
+          }
           return result;
         }
       }
@@ -100,12 +102,12 @@ class PackageService {
     return result;
   }
 
-  public async createPackage(packageObj: PackageCreationAttributes): Promise<boolean> {
+  public async createPackage(packageObj: PackageCreationAttributes): Promise<undefined> {
     try {
       await Package.create(packageObj);
-      return true;
+      return;
     } catch (err) {
-      return false;
+      throw new Error(err as string);
     }
   }
 
@@ -145,18 +147,16 @@ class PackageService {
     }
   }
   
-  
-
-  public async createVersion(versionObj: VersionCreationAttributes): Promise<boolean> {
+  public async createVersion(versionObj: VersionCreationAttributes): Promise<undefined> {
     if (await Version.findOne({ where: { version: versionObj.version, packageID: versionObj.packageID } })) {
-      return false;
+      throw new Error("Version already exists");
     }
 
     try {
       await Version.create(versionObj);
-      return true;
+      return;
     } catch (err) {
-      return false;
+      throw new Error(err as string);
     }
   }
 }

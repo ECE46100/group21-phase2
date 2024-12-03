@@ -49,5 +49,11 @@ Version.init({
 }, {
   sequelize,
   tableName: 'versions',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['packageID', 'version']
+    }
+  ]
 });

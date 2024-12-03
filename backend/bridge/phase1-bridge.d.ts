@@ -1,0 +1,1 @@
+export declare const ratePackage: (packageUrl: string) => Promise<string>;
