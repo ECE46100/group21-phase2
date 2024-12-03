@@ -70,12 +70,12 @@ jobs:
             echo PORT=4000 >> .env &&
 
             cd ../backend &&
-            tmux kill-session -t backend || true &&
+            tmux kill-session -t backend 2>/dev/null || true &&
             tmux new-session -d -s backend &&
             tmux send-keys -t backend 'npm run start' C-m &&
 
             cd ../frontend &&
-            tmux kill-session -t frontend || true &&
+            tmux kill-session -t frontend 2>/dev/null || true
             tmux new-session -d -s frontend &&
             tmux send-keys -t frontend 'npm run start' C-m &&
             '
