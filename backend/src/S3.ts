@@ -7,7 +7,7 @@ let { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, CI_ON } = process.en
 if (CI_ON) {
   AWS_ACCESS_KEY_ID = "";
   AWS_SECRET_ACCESS_KEY = "";
-  AWS_REGION = "";
+  AWS_REGION = "us-east-1";
 } else if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION) {
   throw new Error("Missing AWS configuration");
 }
