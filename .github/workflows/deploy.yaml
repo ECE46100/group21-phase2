@@ -16,25 +16,25 @@ jobs:
         with:
           submodules: true
           
-      - name: install dependencies (backend)
-        run: npm install
-        working-directory: backend
+      # - name: install dependencies (backend)
+      #   run: npm install
+      #   working-directory: backend
 
-      - name: install dependencies (frontend)
-        run: npm install
-        working-directory: frontend
+      # - name: install dependencies (frontend)
+      #   run: npm install
+      #   working-directory: frontend
 
-      - name: install dependencies (phase1 handoff)
-        run: npm install
-        working-directory: backend/group21-phase1-handoff
+      # - name: install dependencies (phase1 handoff)
+      #   run: npm install
+      #   working-directory: backend/group21-phase1-handoff
 
-      - name: build backend
-        run: npm run build
-        working-directory: backend
+      # - name: build backend
+      #   run: npm run build
+      #   working-directory: backend
 
-      - name: build phase1 handoff
-        run: npx tsc
-        working-directory: backend/group21-phase1-handoff
+      # - name: build phase1 handoff
+      #   run: npx tsc
+      #   working-directory: backend/group21-phase1-handoff
         
       - name: deploy with rsync
         uses: burnett01/rsync-deployments@5.1
@@ -53,6 +53,12 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
 
             cd ~/app_deployment/backend
+            npm install
+            npm run build
+            cd group21-phase1-handoff
+            npm install
+            npx tsc
+            cd ../
             # configure env
             touch .env
             echo DB_HOST=${{ secrets.DB_HOST }} >> .env
@@ -66,6 +72,7 @@ jobs:
             echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
 
             cd ../frontend
+            npm install
             touch .env
             echo PORT=4000 >> .env
 
