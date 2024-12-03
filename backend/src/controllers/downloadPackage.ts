@@ -3,14 +3,14 @@ import PackageService from '../services/packageService';
 import { readPackageZip } from '../utils/packageFileUtils';
 
 export default async function downloadPackage(req: Request, res: Response) {
-  const { IDStr } = req.params;
+  const { id } = req.params;
 
-  if (!IDStr || Number.isNaN(IDStr)) {
+  if (!id || Number.isNaN(id)) {
     res.status(400).send('Invalid request');
     return;
   }
 
-  const ID = parseInt(IDStr);
+  const ID = parseInt(id);
 
   const versionObj = await PackageService.getPackageVersion(ID);
   if (!versionObj) {
@@ -26,7 +26,7 @@ export default async function downloadPackage(req: Request, res: Response) {
       metadata: {
         Name: PackageService.getPackageName(versionObj.packageID),
         Version: versionObj.version,
-        ID: IDStr,
+        ID: id,
       },
       data: {
         Content: packageZip,
