@@ -53,7 +53,7 @@ Version.init({
   indexes: [
     {
       unique: true,
-      fields: ['packageID', 'version'] // Unique constraint on the combination of packageID and version
+      fields: ['packageID', 'version']
     }
   ]
 });

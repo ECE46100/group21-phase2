@@ -14,12 +14,12 @@ if (!GITHUB_TOKEN) {
 export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
 
-  if (parsedUrl.hostname === 'www.github.com') {
+  if (parsedUrl.hostname.includes('github.com')) {
     return await handleGitHubUrl(parsedUrl);
-  } else if (parsedUrl.hostname === 'www.npmjs.com') {
+  } else if (parsedUrl.hostname.includes('npmjs.com')) {
     return await handleNpmUrl(parsedUrl);
   } else {
-    throw new Error('Unsupported URL Hostname');
+    throw new Error(`Unsupported URL Hostname`);
   }
 }
 

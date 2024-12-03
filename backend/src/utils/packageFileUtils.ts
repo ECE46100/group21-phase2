@@ -8,8 +8,9 @@ import path from 'path';
 import AdmZip from 'adm-zip';
 import { extract } from 'tar';
 import { execSync } from 'child_process';
+import s3Client from '../S3';
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
-const packageDir = path.join(__dirname, '..', '..', 'packages');
 const unzippedDir = path.join(__dirname, '..', '..', 'unzipped');
 const conversionDir = path.join(__dirname, '..', '..', 'conversion');
 
@@ -19,18 +20,22 @@ const conversionDir = path.join(__dirname, '..', '..', 'conversion');
  * @param versionID: number
  * @returns the path to the unzipped directory if successful, Error if failed
  */
-export function unzipPackage(packageID: number, versionID: number): string {
-  const packagePath = path.join(packageDir, `${packageID}-${versionID}.zip`);
+export async function unzipPackage(packageID: number, versionID: number): Promise<string> {
   const unzippedPath = path.join(unzippedDir, `${packageID}-${versionID}`);
   
   try {
     fs.mkdirSync(unzippedPath, { recursive: true });
-  } catch (err) {
+  } catch {
     throw new Error('Failed to create unzipped directory');
   }
 
   try {
-    const zip = new AdmZip(packagePath);
+    const { Body } = await s3Client.send(new GetObjectCommand({
+      Bucket: 'packages-group21',
+      Key: `${packageID}-${versionID}.zip`,
+    }));
+
+    const zip = new AdmZip(Buffer.from(await Body!.transformToByteArray()));
     zip.extractAllTo(unzippedPath, true);
     return unzippedPath;
   } catch (err: unknown) {
@@ -79,13 +84,15 @@ export function isValidZip(packageZip: string): boolean {
  * @param packageZip: string
  * @returns nothing if successful, Error if failed
  */
-export function writePackageZip(packageID: number, versionID: number, packageZip: string): undefined {
-  const packagePath = path.join(packageDir, `${packageID}-${versionID}.zip`);
+export async function writePackageZip(packageID: number, versionID: number, packageZip: string): Promise<undefined> {
   const decodedZip = Buffer.from(packageZip, 'base64');
 
   try {
-    fs.mkdirSync(packageDir, { recursive: true });
-    fs.writeFileSync(packagePath, decodedZip);
+    await s3Client.send(new PutObjectCommand({
+      Bucket: 'packages-group21',
+      Key: `${packageID}-${versionID}.zip`,
+      Body: decodedZip,
+    }));
     return;
   } catch (err: unknown) {
     throw new Error(err as string);
@@ -98,14 +105,13 @@ export function writePackageZip(packageID: number, versionID: number, packageZip
  * @param versionID: number
  * @returns base64 encoded string if successful, Error if failed
  */
-export function readPackageZip(packageID: number, versionID: number): string {
-  const packagePath = path.join(__dirname, '..', '..', 'packages', `${packageID}-${versionID}.zip`);
-  if (!fs.existsSync(packagePath)) {
-    throw new Error('Package does not exist');
-  }
-  
+export async function readPackageZip(packageID: number, versionID: number): Promise<string> {
   try {
-    const encodedZip = fs.readFileSync(packagePath).toString('base64');
+    const zipFile = await s3Client.send(new GetObjectCommand({
+      Bucket: 'packages-group21',
+      Key: `${packageID}-${versionID}.zip`,
+    }));
+    const encodedZip = Buffer.from(await zipFile.Body!.transformToByteArray()).toString('base64');
     return encodedZip;
   } catch {
     throw new Error('Failed to read package');
@@ -131,7 +137,7 @@ export async function writeZipFromTar(packageID: number, versionID: number, tarF
       cwd: unzippedPath,
     });
     const zippedPackage = zipPackage(unzippedPath);
-    writePackageZip(packageID, versionID, zippedPackage);
+    await writePackageZip(packageID, versionID, zippedPackage);
 
     fs.rmSync(conversionPath);
     fs.rmSync(unzippedPath, { recursive: true, force: true });
@@ -146,10 +152,10 @@ export async function writeZipFromTar(packageID: number, versionID: number, tarF
  * @param versionID: number
  * @param packageZip: string
  */
-export function debloatPackageZip(packageID: number, versionID: number, packageZip: string): undefined {
+export async function debloatPackageZip(packageID: number, versionID: number, packageZip: string): Promise<undefined> {
   try {
-    writePackageZip(packageID, versionID, packageZip);
-    const unzippedPath = unzipPackage(packageID, versionID);
+    await writePackageZip(packageID, versionID, packageZip);
+    const unzippedPath = await unzipPackage(packageID, versionID);
     const depcheckOutput = execSync(`npx depcheck ${unzippedPath} --json`, { encoding: 'utf-8' });
 
     const result = JSON.parse(depcheckOutput) as { dependencies: string[]; devDependencies: string[] };
@@ -186,7 +192,7 @@ export function debloatPackageZip(packageID: number, versionID: number, packageZ
 
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
     const zippedPackage = zipPackage(unzippedPath);
-    writePackageZip(packageID, versionID, zippedPackage);
+    await writePackageZip(packageID, versionID, zippedPackage);
   } catch (err: unknown) {
     throw new Error(err as string);
   }

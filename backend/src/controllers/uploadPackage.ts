@@ -49,9 +49,9 @@ export default async function uploadPackage(req: Request, res: Response) {
 
       // Write the package to the file system
       if (contentRequest.debloat) {
-        debloatPackageZip(packageID!, versionID!, contentRequest.Content);
+        await debloatPackageZip(packageID!, versionID!, contentRequest.Content);
       } else {
-        writePackageZip(packageID!, versionID!, contentRequest.Content);
+        await writePackageZip(packageID!, versionID!, contentRequest.Content);
       }
 
       const response = {
@@ -72,19 +72,18 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     }
   } else if (URLRequestSchema.safeParse(req.body).success) {
-    // Get the package data from the URL
+
     const urlRequest = req.body as ValidURLRequest;
-    const packageData = await uploadUrlHandler(urlRequest.URL);
-    // Check if the name exists in the database
-    const name = packageData.name;
-    if (await PackageService.getPackageID(name)) {
-      res.status(409).send('Package already exists');
-      return;
-    }
     // TODO: Rate the package before proceeding
     // TODO: Read the package.json to grab the version if it wasn't found already
     try {
-      // Create the package and version objects
+      const packageData = await uploadUrlHandler(urlRequest.URL);
+
+      const name = packageData.name;
+      if (await PackageService.getPackageID(name)) {
+        res.status(409).send('Package already exists');
+        return;
+      }
       await PackageService.createPackage({
         name: name,
         contentUpload: false,
@@ -99,9 +98,8 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageUrl: urlRequest.URL,
       });
       const versionID = await PackageService.getVersionID(packageID!, packageData.version);
-      // Write the package to the file system
       await writeZipFromTar(packageID!, versionID!, packageData.content);
-      const zippedContents = readPackageZip(packageID!, versionID!);
+      const zippedContents = await readPackageZip(packageID!, versionID!);
       const response = {
         metadata: {
           Name: name,

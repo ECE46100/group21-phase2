@@ -128,91 +128,135 @@ describe("PackageService", () => {
     });
   });
 
-  const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
-    Array.from({ length: count }, (_, i) => ({
-      ID: baseID + i,
-      packageID: 1,
-      version: `1.${minorVersion}.${i}`,
-      createdAt: new Date(),
-  }));
+  describe("getPackagesBySemver", () => {
+    const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
+      Array.from({ length: count }, (_, i) => ({
+        ID: baseID + i,
+        packageID: 1,
+        version: `1.${minorVersion}.${i}`,
+        createdAt: new Date(),
+    }));
 
-  it("should handle less than 50 results total", async () => {
-    const mockVersions = mockVersionRows(30, 0);
+    it("should handle less than 50 results total", async () => {
+      const mockVersions = mockVersionRows(30, 0);
 
-    jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
-    jest.spyOn(Version, "findAndCountAll").mockResolvedValueOnce({
-      count: 30,
-      rows: mockVersions,
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
-    .mockResolvedValueOnce({
-      count: 0,
-      rows: [],
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
+      jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
+      jest.spyOn(Version, "findAndCountAll").mockResolvedValueOnce({
+        count: 30,
+        rows: mockVersions,
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
+      .mockResolvedValueOnce({
+        count: 0,
+        rows: [],
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
 
-    jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
+      jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
 
-    const result = await PackageService.getPackagesBySemver(
-      [{ Name: "testpackage", Version: "~1.0.0" }],
-      0,
-      0
-    );
+      const result = await PackageService.getPackagesBySemver(
+        [{ Name: "testpackage", Version: "~1.0.0" }],
+        0,
+        0
+      );
 
-    expect(result[0]).toBe(-1);
-    expect(result[1]).toBe(-1);
-    expect(result[2]).toHaveLength(30);
+      expect(result[0]).toBe(-1);
+      expect(result[1]).toBe(-1);
+      expect(result[2]).toHaveLength(30);
+    });
+
+    it("should handle 50 results on the first page", async () => {
+      const mockVersions = mockVersionRows(50, 0);
+
+      jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
+      jest.spyOn(Version, "findAndCountAll").mockResolvedValue({
+        count: 50,
+        rows: mockVersions,
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
+
+      jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
+
+      const result = await PackageService.getPackagesBySemver(
+        [{ Name: "testpackage", Version: "~1.0.0" }],
+        0,
+        0
+      );
+
+      expect(result[0]).toBe(1);
+      expect(result[1]).toBe(0);
+      expect(result[2]).toHaveLength(50);
+    });
+
+    it("should handle 50 results across multiple pages", async () => {
+      const mockVersions1 = mockVersionRows(30, 0).concat(mockVersionRows(20, 1));
+      const mockVersions2 = mockVersionRows(20, 0).concat(mockVersionRows(30, 1));
+
+      jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
+      jest.spyOn(Version, "findAndCountAll").mockResolvedValueOnce({
+        count: 50,
+        rows: mockVersions1,
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
+      .mockResolvedValueOnce({
+        count: 50,
+        rows: mockVersions2,
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
+      .mockResolvedValueOnce({
+        count: 0,
+        rows: [],
+      } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
+      
+      jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
+
+      const result = await PackageService.getPackagesBySemver(
+        [{ Name: "testpackage", Version: "~1.0.0" }],
+        0,
+        0
+      );
+
+      expect(result[0]).toBe(1);
+      expect(result[1]).toBe(20);
+      expect(result[2]).toHaveLength(50);
+    });
   });
 
-  it("should handle 50 results on the first page", async () => {
-    const mockVersions = mockVersionRows(50, 0);
+  describe("createPackage", () => {
+    it("should create a package", async () => {
+      jest.spyOn(Package, "create").mockResolvedValue(undefined);
 
-    jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
-    jest.spyOn(Version, "findAndCountAll").mockResolvedValue({
-      count: 50,
-      rows: mockVersions,
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
-
-    jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
-
-    const result = await PackageService.getPackagesBySemver(
-      [{ Name: "testpackage", Version: "~1.0.0" }],
-      0,
-      0
-    );
-
-    expect(result[0]).toBe(1);
-    expect(result[1]).toBe(0);
-    expect(result[2]).toHaveLength(50);
-  });
-
-  it("should handle 50 results across multiple pages", async () => {
-    const mockVersions1 = mockVersionRows(30, 0).concat(mockVersionRows(20, 1));
-    const mockVersions2 = mockVersionRows(20, 0).concat(mockVersionRows(30, 1));
-
-    jest.spyOn(Package, "findOne").mockResolvedValue(mockPackage as Package);
-    jest.spyOn(Version, "findAndCountAll").mockResolvedValueOnce({
-      count: 50,
-      rows: mockVersions1,
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
-    .mockResolvedValueOnce({
-      count: 50,
-      rows: mockVersions2,
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] })
-    .mockResolvedValueOnce({
-      count: 0,
-      rows: [],
-    } as unknown as { rows: Version[], count: GroupedCountResultItem[] });
+      const result = await PackageService.createPackage(mockPackage);
+      expect(Package.create).toHaveBeenCalledWith(mockPackage);
+      expect(result).toBe(undefined);
+    });
     
-    jest.spyOn(Package, "findByPk").mockResolvedValue(mockPackage as Package);
+    it("should throw an error if the package creation fails", async () => {
+      jest.spyOn(Package, "create").mockRejectedValue("error");
 
-    const result = await PackageService.getPackagesBySemver(
-      [{ Name: "testpackage", Version: "~1.0.0" }],
-      0,
-      0
-    );
-
-    expect(result[0]).toBe(1);
-    expect(result[1]).toBe(20);
-    expect(result[2]).toHaveLength(50);
+      await expect(PackageService.createPackage(mockPackage)).rejects.toThrowError("error");
+    });
   });
 
+  describe("createVersion", () => {
+    it("should create a version", async () => {
+      jest.spyOn(Version, "findOne").mockResolvedValue(null);
+      jest.spyOn(Version, "create").mockResolvedValue(undefined);
+
+      const result = await PackageService.createVersion(mockVersion);
+      expect(Version.findOne).toHaveBeenCalledWith({ where: { packageID: 1, version: "1.0.0" } });
+      expect(Version.create).toHaveBeenCalledWith(mockVersion);
+
+      expect(result).toBe(undefined);
+    });
+
+    it("should throw an error if the version already exists", async () => {
+      jest.spyOn(Version, "findOne").mockResolvedValue(mockVersion as Version);
+
+      await expect(PackageService.createVersion(mockVersion)).rejects.toThrowError("Version already exists");
+    });
+
+    it("should throw an error if the version creation fails", async () => {
+      jest.spyOn(Version, "findOne").mockResolvedValue(null);
+      jest.spyOn(Version, "create").mockRejectedValue("error");
+
+      await expect(PackageService.createVersion(mockVersion)).rejects.toThrowError("error");
+    });
+  });
+  
 });

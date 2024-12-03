@@ -49,7 +49,7 @@ router.put('/package/:id', (req: Request, res: Response) => {
   // TODO: Implement the logic to update the package by id in the database
 });
 
-router.post('/package', async (req: Request, res: Response) => {
+router.post('/package', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   if (!req.middleware.permissions.uploadPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
