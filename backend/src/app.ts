@@ -3,11 +3,11 @@ import { Request } from 'express-serve-static-core';
 
 import authenticate from './controllers/authenticate';
 import searchPackages from './controllers/searchPackages';
-import downloadPackage from './controllers/downloadPackage';
 import searchByRegEx from './controllers/searchByRegEx';
+import uploadPackage from './controllers/uploadPackage';
 import updatePackage from './controllers/updatePackage';
 import ratePackage from './controllers/ratePackage';
-import uploadPackage from './controllers/uploadPackage';
+import downloadPackage from './controllers/downloadPackage';
 
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 
