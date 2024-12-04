@@ -20,9 +20,8 @@ const conversionDir = path.join(__dirname, '..', '..', 'conversion');
  * @param versionID: number
  * @returns the path to the unzipped directory if successful, Error if failed
  */
-export async function unzipPackage(packageID: number, versionID: number): Promise<string> {
-  const unzippedPath = path.join(unzippedDir, `${packageID}-${versionID}`);
-  
+export async function unzipPackage(packageID: number, versionID: number): Promise<string[]> {
+  const unzippedPath = path.join(unzippedDir, `${packageID}-${versionID}`);  
   try {
     fs.mkdirSync(unzippedPath, { recursive: true });
   } catch {
@@ -36,8 +35,11 @@ export async function unzipPackage(packageID: number, versionID: number): Promis
     }));
 
     const zip = new AdmZip(Buffer.from(await Body!.transformToByteArray()));
+    const directoryName = zip.getEntries().find(entry => entry.isDirectory)?.entryName;
+
     zip.extractAllTo(unzippedPath, true);
-    return unzippedPath;
+
+    return [unzippedPath, directoryName!];
   } catch (err: unknown) {
     throw new Error(err as string);
   }
@@ -153,46 +155,67 @@ export async function writeZipFromTar(packageID: number, versionID: number, tarF
  * @param packageZip: string
  */
 export async function debloatPackageZip(packageID: number, versionID: number, packageZip: string): Promise<undefined> {
+  // try {
+  //   await writePackageZip(packageID, versionID, packageZip);
+  //   const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
+  //   const depcheckOutput = execSync(`npx depcheck ${path.join(unzippedPath, directoryName)} --json`, { encoding: 'utf-8' });
+
+  //   const result = JSON.parse(depcheckOutput) as { dependencies: string[]; devDependencies: string[] };
+
+  //   const unusedDeps = Array.isArray(result.dependencies) ? result.dependencies : [];
+  //   const unusedDevDeps = Array.isArray(result.devDependencies) ? result.devDependencies : [];
+
+  //   const eslintOutput = execSync(`npx eslint ${path.join(unzippedPath, directoryName)} --ext .js,.ts --fix --quiet`, {
+  //       encoding: 'utf-8',
+  //   });
+
+  //   const usedRequires = new Set();
+  //   const requireRegex = /\brequire\(['"`](.*?)['"`]\)/g;
+    
+  //   eslintOutput.split('\n').forEach((line) => {
+  //       let match;
+  //       while ((match = requireRegex.exec(line)) !== null) {
+  //           usedRequires.add(match[1]);
+  //       }
+  //   });
+    
+  //   const packageJsonPath = path.join(path.join(unzippedPath, directoryName), 'package.json');
+  //   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+
+  //   for (const dep of unusedDeps) {
+  //       if (!usedRequires.has(dep)) {
+  //           delete packageJson.dependencies[dep];
+  //       }
+  //   }
+
+  //   for (const dep of unusedDevDeps) {
+  //     delete packageJson.devDependencies[dep];
+  //   }
+
+  //   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+  //   const zippedPackage = zipPackage(unzippedPath);
+  //   fs.rmSync(unzippedPath, { recursive: true, force: true });
+  //   await writePackageZip(packageID, versionID, zippedPackage);
+  // } catch (err: unknown) {
+  //   throw new Error(err as string);
+  // }
+  await writePackageZip(packageID, versionID, packageZip);
+}
+
+/**
+ * Gets package.json for package
+ * @param packageID: number
+ * @param versionID: number
+ * @param packageJson: string
+ */
+export async function getPackageJson(packageID: number, versionID: number): Promise<any> {
   try {
-    await writePackageZip(packageID, versionID, packageZip);
-    const unzippedPath = await unzipPackage(packageID, versionID);
-    const depcheckOutput = execSync(`npx depcheck ${unzippedPath} --json`, { encoding: 'utf-8' });
+    const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
+    const packageJsonPath = path.join(path.join(unzippedPath, directoryName), 'package.json');
+    const packageJson = fs.readFileSync(packageJsonPath, 'utf-8');
+    fs.rmSync(unzippedPath, { recursive: true, force: true });
 
-    const result = JSON.parse(depcheckOutput) as { dependencies: string[]; devDependencies: string[] };
-
-    const unusedDeps = Array.isArray(result.dependencies) ? result.dependencies : [];
-    const unusedDevDeps = Array.isArray(result.devDependencies) ? result.devDependencies : [];
-
-    const eslintOutput = execSync(`npx eslint ${unzippedPath} --ext .js,.ts --fix --quiet`, {
-        encoding: 'utf-8',
-    });
-
-    const usedRequires = new Set();
-    const requireRegex = /\brequire\(['"`](.*?)['"`]\)/g;
-    
-    eslintOutput.split('\n').forEach((line) => {
-        let match;
-        while ((match = requireRegex.exec(line)) !== null) {
-            usedRequires.add(match[1]);
-        }
-    });
-    
-    const packageJsonPath = path.join(unzippedPath, 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
-
-    for (const dep of unusedDeps) {
-        if (!usedRequires.has(dep)) {
-            delete packageJson.dependencies[dep];
-        }
-    }
-
-    for (const dep of unusedDevDeps) {
-      delete packageJson.devDependencies[dep];
-    }
-
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-    const zippedPackage = zipPackage(unzippedPath);
-    await writePackageZip(packageID, versionID, zippedPackage);
+    return JSON.parse(packageJson);
   } catch (err: unknown) {
     throw new Error(err as string);
   }

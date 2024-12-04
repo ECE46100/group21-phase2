@@ -49,7 +49,7 @@ export default async function updatePackage(req: Request, res: Response) {
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',
-        programPath: '', // TODO: 
+        JSProgram: contentUpdateRequest.JSProgram ?? '', // TODO: 
         packageUrl: '',
       });
       const versionID = await PackageService.getVersionID(packageID, contentUpdateRequest.Version);
@@ -97,7 +97,7 @@ export default async function updatePackage(req: Request, res: Response) {
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',
-        programPath: '', // TODO
+        JSProgram: urlUpdateRequest.JSProgram ?? '', // TODO
         packageUrl: urlUpdateRequest.URL,
       });
       const versionID = await PackageService.getVersionID(packageID, urlUpdateRequest.Version);

@@ -2,7 +2,9 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler  from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip, getPackageJson } from '../utils/packageFileUtils';
+import { logger } from '../utils/logUtils';
+import { PackageJsonFields } from 'package-types';
 import { z } from 'zod';
 
 const ContentRequestSchema = z.object({
@@ -32,19 +34,31 @@ export default async function uploadPackage(req: Request, res: Response) {
     }
     try {
       // Create the package and version objects
-      await PackageService.createPackage({ 
-        name: name,
-        contentUpload: true,
-      });
+      try {
+        await PackageService.createPackage({ 
+          name: name,
+          contentUpload: true,
+        });
+      } catch {
+        res.status(409).send('Package already exists');
+        return;
+      }
+
       const packageID = await PackageService.getPackageID(name);
-      await PackageService.createVersion({
-        version: '1.0.0',
-        packageID: packageID!,
-        author: req.middleware.username,
-        accessLevel: 'public',
-        programPath: '', // TODO: Implement this
-        packageUrl: '',
-      });
+      try {
+        await PackageService.createVersion({
+          version: '1.0.0',
+          packageID: packageID!,
+          author: req.middleware.username,
+          accessLevel: 'public',
+          JSProgram: contentRequest.JSProgram ?? '',
+          packageUrl: '',
+        });
+      } catch {
+        res.status(409).send('Version already exists');
+        return;
+      }
+
       const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
 
       // Write the package to the file system
@@ -52,6 +66,14 @@ export default async function uploadPackage(req: Request, res: Response) {
         await debloatPackageZip(packageID!, versionID!, contentRequest.Content);
       } else {
         await writePackageZip(packageID!, versionID!, contentRequest.Content);
+      }
+      
+      const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
+      if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
+        const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
+        await PackageService.updatePackageUrl(versionID!, packageUrl);
+      } else if (packageJson.homepage && typeof packageJson.homepage === 'string' && (packageJson.homepage.includes('github.com') || packageJson.homepage.includes('npmjs.com'))) {
+        await PackageService.updatePackageUrl(versionID!, packageJson.homepage);
       }
 
       const response = {
@@ -67,7 +89,8 @@ export default async function uploadPackage(req: Request, res: Response) {
       }
       res.status(200).send(response);
       return;
-    } catch {
+    } catch (err) {
+      logger.error(err);
       res.status(500).send('Error creating package');
       return;
     }
@@ -94,7 +117,7 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageID: packageID!,
         author: req.middleware.username,
         accessLevel: 'public',
-        programPath: '', // TODO: Implement this
+        JSProgram: urlRequest.JSProgram ?? '',
         packageUrl: urlRequest.URL,
       });
       const versionID = await PackageService.getVersionID(packageID!, packageData.version);
@@ -113,7 +136,8 @@ export default async function uploadPackage(req: Request, res: Response) {
       }
       res.status(200).send(response);
       return;
-    } catch {
+    } catch (err) {
+      logger.error(err);
       res.status(500).send('Error creating package');
       return;
     }

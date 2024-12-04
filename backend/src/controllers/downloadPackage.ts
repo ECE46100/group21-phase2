@@ -17,20 +17,18 @@ export default async function downloadPackage(req: Request, res: Response) {
     res.status(404).send('Package not found');
     return;
   }
-
-  // TODO: Implement JSProgram execution
   
   try {
-    const packageZip = readPackageZip(versionObj.packageID, versionObj.ID);
+    const packageZip = await readPackageZip(versionObj.packageID, versionObj.ID);
     res.status(200).send({
       metadata: {
-        Name: PackageService.getPackageName(versionObj.packageID),
+        Name: await PackageService.getPackageName(versionObj.packageID),
         Version: versionObj.version,
         ID: id,
       },
       data: {
         Content: packageZip,
-        JSProgram: "", // TODO: Implement
+        JSProgram: versionObj.JSProgram, 
       }
     });
   } catch {
