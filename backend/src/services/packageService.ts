@@ -160,6 +160,15 @@ class PackageService {
       throw new Error(err as string);
     }
   }
+
+  public async updatePackageUrl(versionID: number, packageUrl: string): Promise<undefined> {
+    try {
+      await Version.update({ packageUrl: packageUrl }, { where: { ID: versionID } });
+      return;
+    } catch (err) {
+      throw new Error(err as string);
+    }
+  }
 }
 
 export default new PackageService();

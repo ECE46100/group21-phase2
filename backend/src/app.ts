@@ -48,7 +48,6 @@ router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, 
   return await downloadPackage(req, res);
 });
 
-
 router.post('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
@@ -66,7 +65,6 @@ router.post('/package', authMiddleware, permMiddleware, async (req: Request, res
   return await uploadPackage(req, res);
 });
 
-
 router.get('/package/:id/rate', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
@@ -79,6 +77,8 @@ router.get('/package/:id/rate', authMiddleware, permMiddleware, async (req: Requ
 router.post('/package/:id/cost', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   const id = req.params.id;
   // TODO: Implement the logic to calculate the cost of the package by id
+  res.status(501).send('Not implemented');
+  return;
 });
 
 router.put('/authenticate', async (req: Request, res: Response) => {
@@ -95,7 +95,8 @@ router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Requ
 });
 
 router.get('/track', (req: Request, res: Response) => {
-  // TODO: Implement the logic to return the track
+  res.status(200).send("Access control track");
+  return;
 });
 
 router.delete('/deleteUser', (req: Request, res: Response) => {

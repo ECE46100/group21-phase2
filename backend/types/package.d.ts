@@ -16,7 +16,7 @@ declare module 'package-types' {
     packageID: number;
     author: string;
     accessLevel: string;
-    programPath: string; // TODO: maybe should be located in the package table
+    JSProgram: string; // TODO: maybe should be located in the package table
     packageUrl: string; // TODO: maybe should be located in the package table
   }
   
@@ -69,5 +69,16 @@ declare module 'package-types' {
   /* Expected schema for github api */
   export interface GitHubResponse {
     name: string;
+  }
+
+  export interface GitHubPackageJson {
+    content: string;
+  }
+
+  export interface PackageJsonFields {
+    repository: string | { url: string };
+    homepage: string;
+    name: string;
+    version: string;
   }
 }
