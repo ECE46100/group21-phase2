@@ -13,7 +13,6 @@ import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 const router = Router();
 
 router.post('/packages', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  // console.log('in router POST /packages'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(401).send('Unauthorized - missing permissions');
     return;
@@ -23,7 +22,6 @@ router.post('/packages', authMiddleware, permMiddleware, async (req: Request, re
 
 router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the packages by regular expression from the database
-  // console.log('in router POST /packages/byRegEx'); //delete me
   if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(401).send('Unauthorized - missing permissions');
     return;
@@ -52,6 +50,8 @@ router.put('/package/:id', (req: Request, res: Response) => {
   // console.log('in router PUT /package/:id'); //delete me
   const id = req.params.id;
   // TODO: Implement the logic to update the package by id in the database
+  res.status(501).send('Not implemented');
+  return;
 });
 
 router.post('/package', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
@@ -65,11 +65,15 @@ router.post('/package', authMiddleware, permMiddleware, async (req: Request, res
 router.get('/package/:id/rate', (req: Request, res: Response) => {
   const id = req.params.id;
   // TODO: Implement the logic to fetch the rating of the package by id from the database
+  res.status(501).send('Not implemented');
+  return;
 });
 
 router.post('/package/:id/cost', (req: Request, res: Response) => {
   const id = req.params.id;
   // TODO: Implement the logic to calculate the cost of the package by id
+  res.status(501).send('Not implemented');
+  return;
 });
 
 router.put('/authenticate', async (req: Request, res: Response) => {
@@ -85,7 +89,8 @@ router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Requ
 });
 
 router.get('/track', (req: Request, res: Response) => {
-  // TODO: Implement the logic to return the track
+  res.status(200).send("Access control track");
+  return;
 });
 
 router.delete('/deleteUser', (req: Request, res: Response) => {

@@ -8,29 +8,31 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     res.status(403).send("Unauthorized - no token provided");
     return;
   }
-  const username = await userService.verifyToken(token);
-  if (!username) {
+  try {
+    const username = await userService.verifyToken(token);
+    req.middleware = {
+      username: username,
+      permissions: {
+        uploadPerm: false,
+        downloadPerm: false,
+        searchPerm: false,
+        adminPerm: false,
+      },
+    };
+    next();
+  } catch {
     res.status(403).send("Unauthorized - invalid token");
     return;
   }
-  req.middleware = {
-    username: username,
-    permissions: {
-      uploadPerm: false,
-      downloadPerm: false,
-      searchPerm: false,
-      adminPerm: false,
-    },
-  };
-  next();
 }
 
 export async function permMiddleware(req: Request, res: Response, next: NextFunction) {
-  const userPerms = await userService.getUserPerms(req.middleware.username);
-  if (!userPerms) {
+  try {
+    const userPerms = await userService.getUserPerms(req.middleware.username);
+    req.middleware.permissions = userPerms;
+    next();
+  } catch {
     res.status(403).send("Unauthorized - invalid user");
     return;
   }
-  req.middleware.permissions = userPerms;
-  next();
 }

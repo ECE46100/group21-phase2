@@ -19,7 +19,7 @@ const mockVersion = {
   author: "testauthor",
   accessLevel: "public",
   timestamp: new Date(),
-  programPath: "testpath",
+  JSProgram: "testpath",
   packageUrl: "testurl",
 }
 
