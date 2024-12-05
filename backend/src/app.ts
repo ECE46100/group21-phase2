@@ -111,4 +111,8 @@ router.get('/uploadHistory/:id', (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the upload history by id
 });
 
+router.get('/downloadHistory/:id', (req: Request, res: Response) => {
+  // TODO: Implement the logic to fetch the upload history by id
+});
+
 export default router;

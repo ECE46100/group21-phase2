@@ -191,7 +191,7 @@ const UpdatePage: React.FC = () => {
       if (response.status === 200) {
         alert('Version updated successfully!');
       } else {
-        alert('Update failed with an unknown error.');
+        alert(await response.text());
       }
     } catch (error) {
       console.error('Error updating package:', error);

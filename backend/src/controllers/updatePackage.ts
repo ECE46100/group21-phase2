@@ -30,14 +30,6 @@ const ContentUpdateSchema = z.object({
 });
 
 export default async function updatePackage(req: Request, res: Response) {
-  const versionID = parseInt(req.params.id); // e.g., 123567192081501
-
-  // Check if the versionID is valid
-  if (!versionID || versionID <= 0) {
-    res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
-    return;
-  }
-
   // Validate the request body against the schema
   const validationResult = ContentUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
@@ -45,65 +37,85 @@ export default async function updatePackage(req: Request, res: Response) {
     return;
   }
 
+  // Cannot use both content and url
   const { metadata, data } = validationResult.data;
+  if (data.Content && data.URL) {
+    res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
+    return;
+  }
 
   // Check if the package to update exists
+  const versionID = parseInt(req.params.id); // e.g., 123567192081501
+  const version = await PackageService.getPackageVersion(versionID);
   const packageName = metadata.Name;
   const packageID = await PackageService.getPackageID(packageName);
-  if (!packageID) {
+  if (!packageID || packageID!=version?.packageID) {
     res.status(404).send('Package does not exist.');
     return;
   }
 
+  // Check if the package requires content upload
+  const _package = await PackageService.getPackageByID(packageID);
+  if (_package?.contentUpload && !data.Content) {
+    res.status(409).send('Package ingested via Content must be updated with Content.');
+    return;
+  } 
+
   try {
     // Check if the new version already exists
     const existingVersions = await PackageService.getAllVersions(packageID);
-    if (existingVersions.some((v) => v.version === metadata.Version)) {
-      const latestVersion = existingVersions
-        .map((v) => v.version)
-        .sort(semver.compare)
-        .pop();
 
-      if (latestVersion) {
-        // Increment the version to the next patch version
-        metadata.Version = semver.inc(latestVersion, 'patch')!;
-        console.log(`Version already exists. Incrementing to next patch version: ${metadata.Version}`);
-      } else {
-        // Fallback to default version
-        metadata.Version = '1.0.0';
-        console.log(`No valid version found. Setting to default: ${metadata.Version}`);
-      }
+    if (existingVersions.some((v) => v.version === metadata.Version)) {
+      res.status(400).send('Version already exists.');
+      return;
     }
 
-    const programPath = path.join(packageDir, `${packageID}-${versionID}.zip`);
+    // Extract the major, minor, and patch versions from the incoming version
+    const [incomingMajor, incomingMinor, incomingPatch] = metadata.Version.split('.').map(Number);
+
+    // Separate existing versions into major/minor/patch levels for comparison
+    const versionMap = existingVersions.reduce((acc, v) => {
+      const [major, minor, patch] = v.version.split('.').map(Number);
+
+      if (!acc[major]) acc[major] = {};
+      if (!acc[major][minor]) acc[major][minor] = [];
+
+      acc[major][minor].push(patch);
+      return acc;
+    }, {} as Record<number, Record<number, number[]>>);
+
+    // Check if the incoming version violates the spec
+    if (versionMap[incomingMajor]?.[incomingMinor]) {
+      // If this is a patch version, ensure it's sequential
+      const patches = versionMap[incomingMajor][incomingMinor];
+      const maxPatch = Math.max(...patches);
+
+      if (incomingPatch <= maxPatch) {
+        res.status(400).send('Patch versions must be uploaded sequentially.');
+        return;
+      }
+    }
+    // } else if (incomingPatch !== 0) {
+    //   // If no matching major/minor exists, ensure patch is zero for a new minor/major
+    //   res.status(400).send('Invalid version. Patch must start at 0 for new major or minor versions.');
+    //   return;
+    // }
+
+    // const programPath = path.join(packageDir, `${packageID}-${versionID}.zip`);
 
     // Process the update based on Content or URL
     if (data.Content) {
       // Handle content-based update
       console.log(`Processing content-based update for ${metadata.Name}`);
-      if (!await PackageService.getPackageVersion(versionID)) {
-        // Create version with specific versionID
-        await PackageService.createVersion({
-          ID: versionID,
-          version: metadata.Version,
-          packageID: packageID,
-          author: req.middleware.username,
-          accessLevel: 'public',
-          programPath: programPath,
-          packageUrl: '',
-        });
-      } else {
-        // Create version without specific versionID
-        await PackageService.createVersion({
-          version: metadata.Version,
-          packageID: packageID,
-          author: req.middleware.username,
-          accessLevel: 'public',
-          programPath: programPath,
-          packageUrl: '',
-        });
-      }
-
+      await PackageService.createVersion({
+        version: metadata.Version,
+        packageID: packageID,
+        author: req.middleware.username,
+        accessLevel: 'public',
+        // programPath: programPath,
+        JSProgram: '',
+        packageUrl: '',
+      });
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
       if (!createdVersionID) {
         res.status(500).send('Error creating version.');
@@ -111,35 +123,21 @@ export default async function updatePackage(req: Request, res: Response) {
       }
 
       // Save content to file system
-      writePackageZip(packageID, createdVersionID, data.Content);
+      await writePackageZip(packageID, createdVersionID, data.Content);
       res.status(200).send('Version is updated.');
     } else if (data.URL) {
       // Handle URL-based update
-      // console.log(`Processing URL-based update for ${metadata.Name}`);
+      console.log(`Processing URL-based update for ${metadata.Name}`);
       const packageData = await uploadUrlHandler(data.URL);
-
-      if (!await PackageService.getPackageVersion(versionID)) {
-        // Create version with specific versionID
-        await PackageService.createVersion({
-          ID: versionID,
-          version: metadata.Version,
-          packageID: packageID,
-          author: req.middleware.username,
-          accessLevel: 'public',
-          programPath: '', // No path for URL-based content
-          packageUrl: data.URL,
-        });
-      } else {
-        // Create version without specific versionID
-        await PackageService.createVersion({
-          version: metadata.Version,
-          packageID: packageID,
-          author: req.middleware.username,
-          accessLevel: 'public',
-          programPath: '', // No path for URL-based content
-          packageUrl: data.URL,
-        });
-      }
+      await PackageService.createVersion({
+        version: metadata.Version,
+        packageID: packageID,
+        author: req.middleware.username,
+        accessLevel: 'public',
+        // programPath: '', // No path for URL-based content
+        JSProgram: '',
+        packageUrl: data.URL,
+      });
 
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
       if (!createdVersionID) {

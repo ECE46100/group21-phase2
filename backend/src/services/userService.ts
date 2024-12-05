@@ -1,4 +1,5 @@
 import { User } from "../models/user";
+import { UserGroup } from "../models/userGroup"
 import * as auth from "../utils/authUtils";
 import type { UserAttributes, UserCreationAttributes, UserPerms } from "user-types";
 
@@ -125,6 +126,24 @@ class UserService {
       };
     }
     throw new Error("User not found");
+  }
+
+  /**
+   * Creates a userGroup
+   * @param groupName: string
+   * @param description: string (optional)
+   * @returns undefined if successful, Error if failed
+   */
+  public async createUserGroup(groupName: string, description?: string): Promise<undefined> {
+    try {
+      await UserGroup.create({
+        name: groupName,
+        ...(description && { description }) // if description is provided 
+      });
+      return;
+    } catch (err: unknown) {
+      throw new Error(err as string);
+    }
   }
 }
 
