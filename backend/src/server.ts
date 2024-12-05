@@ -20,7 +20,7 @@ sequelize.sync({ force: true }).then(async () => {
   await resetBucket();
   await UserService.createUser({
     username: 'ece30861defaultadminuser',
-    password: 'correcthorsebatterystaple123(!__+@**(A;DROP TABLE packages;', // in the autograder post they changed it
+    password: "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", // The original would've been correct
     adminPerm: true,
     searchPerm: true,
     downloadPerm: true,
