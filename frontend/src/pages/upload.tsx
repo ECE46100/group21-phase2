@@ -1,47 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PageLayout from './pageLayout';
 
 const UploadPage: React.FC = () => {
-  const [packageName, setPackageName] = useState('');
-  const [version, setVersion] = useState('');
-  const [description, setDescription] = useState('');
-  const [debloat, setDebloat] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [packageName, setPackageName] = useState<string>('');
+  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
+  const [description, setDescription] = useState<string>('');
+  const [debloat, setDebloat] = useState<boolean>(false);
+  const [url, setUrl] = useState<string>('');
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Retrieve auth token from localStorage on component mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
       setAuthToken(token);
     } else {
-      console.log('no token set while entered upload');
+      console.log('No token set while entering upload');
     }
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0];
+  const handleUploadMethodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const method = e.target.value as 'file' | 'url';
+    setUploadMethod(method);
 
-      const isZipFile = selectedFile.type === 'application/zip' || selectedFile.name.endsWith('.zip');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''; // Clear file input
+    }
 
-      if (!isZipFile) {
-        alert('Please select a ZIP file.');
-        e.target.value = '';
-        setFile(null);
-      } else {
-        setFile(selectedFile);
-      }
+    if (method === 'file') {
+      setUrl(''); // Clear URL input
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!file) {
-      alert('Please select a file to upload.'); // impossible
-      return;
-    }
 
     if (!authToken) {
       alert('Authentication token is missing. Please log in.');
@@ -49,34 +41,60 @@ const UploadPage: React.FC = () => {
     }
 
     try {
-      // Read the file content as base64
-      const fileContent = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            resolve(reader.result.split(',')[1]); // Get base64 data part
-          }
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
-      });
+      let payload: any = null;
 
-      // Prepare the payload for the backend
-      const payload = {
-        Content: fileContent,
-        JSProgram: `if (process.argv.length === 7) {
+      if (uploadMethod === 'file') {
+        const fileInput = fileInputRef.current;
+
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+          alert('Please select a ZIP file to upload.');
+          return;
+        }
+
+        const file = fileInput.files[0];
+        const fileContent = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result.split(',')[1]); // Get base64 data part
+            }
+          };
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file);
+        });
+
+        payload = {
+          Content: fileContent,
+          JSProgram: `if (process.argv.length === 7) {
 console.log('Success')
 process.exit(0)
 } else {
 console.log('Failed')
 process.exit(1)
 }`,
-        debloat: debloat,
-        Name: packageName,
-        Version: version,
-      };
+          debloat,
+          Name: packageName,
+        };
+      } else if (uploadMethod === 'url') {
+        if (!url) {
+          alert('Please provide a valid URL.');
+          return;
+        }
 
-      // Send the request to the backend
+        payload = {
+          URL: url,
+          JSProgram: `if (process.argv.length === 7) {
+console.log('Success')
+process.exit(0)
+} else {
+console.log('Failed')
+process.exit(1)
+}`,
+        };
+      }
+
+      console.log('Payload:', payload);
+
       const response = await fetch('/package', {
         method: 'POST',
         headers: {
@@ -92,11 +110,11 @@ process.exit(1)
       } else if (response.status === 400) {
         alert('Upload failed: Missing fields or invalid data.');
       } else if (response.status === 403) {
-        alert('Upload failed: Authentication failed due to invalid or missing AuthenticationToken.');
+        alert('Upload failed: Authentication failed.');
       } else if (response.status === 409) {
         alert('Upload failed: Package already exists.');
       } else if (response.status === 424) {
-        alert('Upload failed: Package did not meet the required rating.');
+        alert('Upload failed: Package is disqualified due to rating.');
       } else {
         alert('Upload failed with an unknown error.');
       }
@@ -107,76 +125,99 @@ process.exit(1)
   };
 
   return (
-<PageLayout title="Upload a Package">
-  <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '0 auto' }}>
-    <div style={{ marginBottom: '15px' }}>
-      <label>
-        Package Name:
-        <input
-          type="text"
-          value={packageName}
-          onChange={(e) => setPackageName(e.target.value)}
-          required
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </label>
-    </div>
+    <PageLayout title="Upload a Package">
+      <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Package Name:
+            <input
+              type="text"
+              value={packageName}
+              onChange={(e) => setPackageName(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
 
-    <div style={{ marginBottom: '15px' }}>
-      <label>
-        Version:
-        <input
-          type="text"
-          value={version}
-          onChange={(e) => setVersion(e.target.value)}
-          required
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </label>
-    </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Upload Method:
+            <select
+              value={uploadMethod}
+              onChange={handleUploadMethodChange}
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            >
+              <option value="file">Upload ZIP File</option>
+              <option value="url">Upload via URL</option>
+            </select>
+          </label>
+        </div>
 
-    <div style={{ marginBottom: '15px' }}>
-      <label>
-        Description:
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </label>
-    </div>
+        {uploadMethod === 'file' ? (
+          <div style={{ marginBottom: '15px' }}>
+            <label>
+              Upload File:
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'block', marginTop: '5px' }}
+              />
+            </label>
+          </div>
+        ) : (
+          <div style={{ marginBottom: '15px' }}>
+            <label>
+              Package URL:
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+              />
+            </label>
+          </div>
+        )}
 
-    <div style={{ marginBottom: '15px' }}>
-      <label>
-        Upload File:
-        <input
-          type="file"
-          onChange={handleFileChange}
-          required
-          style={{ display: 'block', marginTop: '5px' }}
-        />
-      </label>
-    </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Description:
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
 
-    <div style={{ marginBottom: '15px' }}>
-      <label>
-        <input
-          type="checkbox"
-          checked={debloat}
-          onChange={(e) => setDebloat(e.target.checked)}
-          style={{ marginRight: '5px' }}
-        />
-        Enable Debloat
-      </label>
-    </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={debloat}
+              onChange={(e) => setDebloat(e.target.checked)}
+              style={{ marginRight: '5px' }}
+            />
+            Enable Debloat
+          </label>
+        </div>
 
-    <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>
-      Upload Package
-    </button>
-  </form>
-</PageLayout>
-
+        <button
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#28a745',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Upload Package
+        </button>
+      </form>
+    </PageLayout>
   );
 };
 

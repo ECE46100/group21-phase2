@@ -45,4 +45,13 @@
     margin-top: 30px;
     color: #777;
   }
+
+
+  select {
+    display: inline-block;
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    margin: 5px 0;
+  }
   
