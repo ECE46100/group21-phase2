@@ -3,7 +3,7 @@ import PackageService from '../services/packageService';
 import { readPackageZip } from '../utils/packageFileUtils';
 
 export default async function downloadPackage(req: Request, res: Response) {
-  const { id } = req.params;
+  const id = req.params.id;
 
   if (!id || Number.isNaN(id)) {
     res.status(400).send('Invalid request');

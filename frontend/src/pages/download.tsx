@@ -9,11 +9,12 @@ interface PackageMetadata {
 
 const DownloadPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [versionTerm, setVersionTerm] = useState(''); // For searching by version
   const [packages, setPackages] = useState<PackageMetadata[]>([]);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState<number>(0);
-  // check if Search performed
+  const [hasNextPage, setHasNextPage] = useState<boolean>(false);
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
 
   // Retrieve auth token from localStorage on component mount
@@ -22,12 +23,19 @@ const DownloadPage: React.FC = () => {
     if (token) {
       setAuthToken(token);
     } else {
-      console.log('no token set while entered download');
+      console.log('No token set while entering download page.');
     }
   }, []);
 
-  const handleSearch = async (page = 0) => {
+  const isRegexSearch = (term: string): boolean => {
+    const regexSpecialChars = /[.*+?^${}()|[\]\\]/;
+    return regexSpecialChars.test(term);
+  };
+
+  const handleSearch = async (pageOffset: number = 0) => {
     setError(null);
+    setSearchPerformed(false);
+    setPackages([]);
 
     if (!authToken) {
       alert('Authentication token is missing. Please log in.');
@@ -35,34 +43,53 @@ const DownloadPage: React.FC = () => {
     }
 
     try {
-      const requestBody = [{ Name: searchTerm }];
-      
-      const response = await fetch(`/packages?offset=${page}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Authorization': authToken,
-        },
-        body: JSON.stringify(requestBody),
-      });
-      
+      if (isRegexSearch(searchTerm)) {
+        // Search with regex
+        const requestBody = { RegEx: searchTerm };
+        const response = await fetch('/package/byRegEx', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Authorization': authToken,
+          },
+          body: JSON.stringify(requestBody),
+        });
 
-      if (response.status === 200) {
-        const allData= await response.json();
-        const data: PackageMetadata[]  = allData.data
-        // const data: PackageMetadata[] = await response.json();
-        setPackages(data);
-        console.log(data);
-        setOffset(page);  // Update offset with the current page number
-        setSearchPerformed(true);
-      } else if (response.status === 400) {
-        setError('Search failed: Missing fields or invalid query.');
-      } else if (response.status === 403) {
-        setError('Search failed: Authentication failed due to invalid or missing AuthenticationToken.');
-      } else if (response.status === 413) {
-        setError('Search failed: Too many packages returned.');
+        if (response.status === 200) {
+          const data: PackageMetadata[] = await response.json();
+          setPackages(data);
+          setHasNextPage(false); // Pagination is not applicable for regex searches
+          setSearchPerformed(true);
+        } else if (response.status === 404) {
+          setPackages([]);
+          alert('No packages found with the given regex.');
+        } else {
+          setError('Search failed with an unknown error.');
+        }
       } else {
-        setError('Search failed with an unknown error.');
+        // Search by name and version
+        const requestBody = [
+          { Name: searchTerm, Version: versionTerm ? versionTerm : '*' },
+        ];
+        const response = await fetch(`/packages?offset=${pageOffset}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Authorization': authToken,
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (response.status === 200) {
+          const allData = await response.json();
+          const data: PackageMetadata[] = allData;
+          setPackages(data);
+          setOffset(pageOffset);
+          setSearchPerformed(true);
+          setHasNextPage(data.length > 0); // Set next page availability
+        } else {
+          setError('Search failed with an unknown error.');
+        }
       }
     } catch (err) {
       console.error('Error during search:', err);
@@ -70,14 +97,22 @@ const DownloadPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (packageId: string) => {
+  const handleNextPage = () => handleSearch(offset + 1);
+  const handlePreviousPage = () => {
+    if (offset > 0) {
+      handleSearch(offset - 1);
+    }
+  };
+
+  const handleDownload = async (versionId: string) => {
     if (!authToken) {
-      alert('Authentication token is missing. Please log in.');
+      console.log('In download.tsx/handleDownload(), no auth token');
       return;
     }
 
     try {
-      const response = await fetch(`/packages/${packageId}`, {
+      console.log(`In download.tsx/handleDownload(), to download versionID = ${versionId}`);
+      const response = await fetch(`/package/${versionId}`, {
         method: 'GET',
         headers: {
           'X-Authorization': authToken,
@@ -96,9 +131,9 @@ const DownloadPage: React.FC = () => {
         link.click();
         document.body.removeChild(link);
       } else if (response.status === 400) {
-        alert('Download failed: Missing fields or improperly formed request.');
+        alert('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
       } else if (response.status === 403) {
-        alert('Download failed: Authentication failed due to invalid or missing AuthenticationToken.');
+        alert('Authentication failed due to invalid or missing AuthenticationToken.');
       } else if (response.status === 404) {
         alert('Download failed: Package does not exist.');
       } else {
@@ -110,20 +145,13 @@ const DownloadPage: React.FC = () => {
     }
   };
 
-  const handleNextPage = () => {
-    handleSearch(offset + 1); // Go to the next page by increasing the page offset by 1
-  };
-
-  const handlePreviousPage = () => {
-    if (offset > 0) handleSearch(offset - 1); // Go to the previous page by decreasing the page offset by 1
-  };
-
   return (
     <PageLayout title="Download a Package">
+      {/* Search Form */}
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
-            Search for Package:
+            Search by Name or Regex:
             <input
               type="text"
               value={searchTerm}
@@ -133,7 +161,20 @@ const DownloadPage: React.FC = () => {
             />
           </label>
         </div>
-
+        {!isRegexSearch(searchTerm) && (
+          <div style={{ marginBottom: '15px' }}>
+            <label>
+              Version (Optional):
+              <input
+                type="text"
+                value={versionTerm}
+                onChange={(e) => setVersionTerm(e.target.value)}
+                placeholder="e.g., 1.2.3 or *"
+                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+              />
+            </label>
+          </div>
+        )}
         <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007bff', color: '#fff', border: 'none', cursor: 'pointer' }}>
           Search
         </button>
@@ -141,6 +182,7 @@ const DownloadPage: React.FC = () => {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
+      {/* Search Results */}
       {searchPerformed && (
         <div style={{ marginTop: '30px' }}>
           <h3>Available Packages:</h3>
@@ -149,12 +191,12 @@ const DownloadPage: React.FC = () => {
               <ul style={{ listStyleType: 'none', padding: '0' }}>
                 {packages.map((pkg) => (
                   <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-                    <strong>{pkg.Name}</strong>
+                    <strong>{pkg.Name}</strong> (v{pkg.Version})
                     <button
-                      onClick={() => handleDownload(pkg.ID)}
+                      onClick={() => {handleDownload(pkg.ID); console.log(`download pkg.ID = ${pkg.ID}`);}}
                       style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     >
-                      download
+                      Download
                     </button>
                   </li>
                 ))}
@@ -174,8 +216,6 @@ const DownloadPage: React.FC = () => {
           )}
         </div>
       )}
-
-
     </PageLayout>
   );
 };

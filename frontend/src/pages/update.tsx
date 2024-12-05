@@ -9,14 +9,13 @@ interface PackageMetadata {
 
 const UpdatePage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [versionTerm, setVersionTerm] = useState(''); // For searching by version (only for name-based search)
+  const [versionTerm, setVersionTerm] = useState(''); // For searching by version
   const [packages, setPackages] = useState<PackageMetadata[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<PackageMetadata | null>(null);
   const [newVersion, setNewVersion] = useState('');
-  const [description, setDescription] = useState('');
   const [debloat, setDebloat] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState<string>(''); // For URL-based updates
+  const [url, setUrl] = useState<string>(''); // URL for URL-based updates
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,9 +52,7 @@ const UpdatePage: React.FC = () => {
 
     try {
       if (isRegexSearch(searchTerm)) {
-        // Search with regex
         const requestBody = { RegEx: searchTerm };
-        console.log(`searching with regex, RegEx : ${searchTerm}`);
         const response = await fetch('/package/byRegEx', {
           method: 'POST',
           headers: {
@@ -77,11 +74,9 @@ const UpdatePage: React.FC = () => {
           setError('Search failed with an unknown error.');
         }
       } else {
-        // Search by name and version
         const requestBody = [
           { Name: searchTerm, Version: versionTerm ? versionTerm : '*' },
         ];
-        console.log(`searching with name, requestbody : ${searchTerm}, ${versionTerm? versionTerm:'*'}`);
         const response = await fetch(`/packages?offset=${pageOffset}`, {
           method: 'POST',
           headers: {
@@ -93,11 +88,8 @@ const UpdatePage: React.FC = () => {
 
         if (response.status === 200) {
           const allData = await response.json();
-          // console.log(allData);
           const data: PackageMetadata[] = allData;
           setPackages(data);
-
-
           setOffset(pageOffset);
           setSearchPerformed(true);
         } else {
@@ -147,6 +139,11 @@ const UpdatePage: React.FC = () => {
       return;
     }
 
+    if (!file && !url) {
+      alert('Please provide either a ZIP file or a URL for the update.');
+      return;
+    }
+
     try {
       let payload: any = {
         metadata: {
@@ -178,17 +175,8 @@ const UpdatePage: React.FC = () => {
         payload.data = {
           URL: url,
           Name: selectedPackage.Name,
-          JSProgram: `if (process.argv.length === 7) {
-            console.log('Success');
-            process.exit(0);
-          } else {
-            console.log('Failed');
-            process.exit(1);
-          }`,
+          debloat: debloat,
         };
-      } else {
-        alert('Please provide either a file or a URL for the update.');
-        return;
       }
 
       const response = await fetch(`/package/${selectedPackage.ID}`, {
@@ -213,7 +201,6 @@ const UpdatePage: React.FC = () => {
 
   return (
     <PageLayout title="Update a Package">
-      {/* Search Section */}
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>
         <div style={{ marginBottom: '15px' }}>
           <label>
@@ -251,31 +238,14 @@ const UpdatePage: React.FC = () => {
       {searchPerformed && (
         <div style={{ marginTop: '30px' }}>
           <h3>Search Results:</h3>
-          {Array.isArray(packages) && packages.length > 0 ? ( // Add explicit Array.isArray check
+          {packages.length > 0 ? (
             <ul style={{ listStyleType: 'none', padding: '0' }}>
               {packages.map((pkg) => (
-                <li
-                  key={pkg.ID}
-                  style={{
-                    marginBottom: '15px',
-                    padding: '10px',
-                    border: '1px solid #ddd',
-                    borderRadius: '8px',
-                    backgroundColor: '#f9f9f9',
-                  }}
-                >
+                <li key={pkg.ID} style={{ marginBottom: '15px', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
                   <strong>{pkg.Name}</strong> (v{pkg.Version})
                   <button
                     onClick={() => handleSelectPackage(pkg)}
-                    style={{
-                      marginLeft: '15px',
-                      padding: '5px 10px',
-                      backgroundColor: '#28a745',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                    }}
+                    style={{ marginLeft: '15px', padding: '5px 10px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                   >
                     Select
                   </button>
@@ -285,129 +255,101 @@ const UpdatePage: React.FC = () => {
           ) : (
             <p>No packages found. Try a different search term.</p>
           )}
-
-          {/* Pagination Controls */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              marginTop: '20px',
-            }}
-          >
-            <button
-              onClick={handlePreviousPage}
-              disabled={offset === 0}
-              style={{
-                padding: '8px 16px',
-                marginRight: '10px',
-                cursor: 'pointer',
-              }}
-            >
-              Previous Page
-            </button>
-            <span style={{ margin: '0 15px' }}>Current Page: {offset + 1}</span>
-            <button
-              onClick={handleNextPage}
-              disabled={!hasNextPage}
-              style={{
-                padding: '8px 16px',
-                cursor: 'pointer',
-              }}
-            >
-              Next Page
-            </button>
-          </div>
         </div>
       )}
 
-
-      {/* Update Form */}
       {selectedPackage && (
         <form onSubmit={handleSubmit} style={{ maxWidth: '500px', margin: '30px auto' }}>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Package Name (Pre-filled):
-              <input
-                type="text"
-                value={selectedPackage.Name}
-                disabled
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Current Version (Pre-filled):
-              <input
-                type="text"
-                value={selectedPackage.Version}
-                disabled
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              New Version:
-              <input
-                type="text"
-                value={newVersion}
-                onChange={(e) => setNewVersion(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Description of Changes:
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Upload New Version File:
-              <input
-                type="file"
-                onChange={handleFileChange}
-                style={{ display: 'block', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Or Provide URL for the Update:
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  setFile(null);
-                }}
-                placeholder="https://example.com/package.zip"
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={debloat}
-                onChange={(e) => setDebloat(e.target.checked)}
-              />
-              Enable Debloat
-            </label>
-          </div>
-          <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#28a745', color: '#fff', border: 'none', cursor: 'pointer' }}>
-            Update Package
-          </button>
-        </form>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Package Name (Pre-filled):
+            <input
+              type="text"
+              value={selectedPackage.Name}
+              disabled
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Current Version (Pre-filled):
+            <input
+              type="text"
+              value={selectedPackage.Version}
+              disabled
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            New Version:
+            <input
+              type="text"
+              value={newVersion}
+              onChange={(e) => setNewVersion(e.target.value)}
+              required
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Upload New Version File:
+            <input
+              type="file"
+              onChange={(e) => {
+                handleFileChange(e);
+              }}
+              ref={(input) => {
+                if (url) {
+                  input && (input.value = ""); // Clear the file input value if a URL is provided
+                }
+              }}
+              style={{ display: 'block', marginTop: '5px' }}
+            />
+          </label>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            Or Provide URL for the Update:
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setFile(null); // Clear the file state
+              }}
+              placeholder="https://example.com/package.zip"
+              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+            />
+          </label>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label>
+            <input
+              type="checkbox"
+              checked={debloat}
+              onChange={(e) => setDebloat(e.target.checked)}
+            />
+            Enable Debloat
+          </label>
+        </div>
+        <button
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#28a745',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Update Package
+        </button>
+      </form>
+      
       )}
     </PageLayout>
   );
