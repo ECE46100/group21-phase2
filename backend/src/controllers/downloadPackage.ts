@@ -3,34 +3,32 @@ import PackageService from '../services/packageService';
 import { readPackageZip } from '../utils/packageFileUtils';
 
 export default async function downloadPackage(req: Request, res: Response) {
-  const { IDStr } = req.params;
+  const id = req.params.id;
 
-  if (!IDStr || Number.isNaN(IDStr)) {
+  if (!id || Number.isNaN(id)) {
     res.status(400).send('Invalid request');
     return;
   }
 
-  const ID = parseInt(IDStr);
+  const ID = parseInt(id);
 
   const versionObj = await PackageService.getPackageVersion(ID);
   if (!versionObj) {
     res.status(404).send('Package not found');
     return;
   }
-
-  // TODO: Implement JSProgram execution
   
   try {
-    const packageZip = readPackageZip(versionObj.packageID, versionObj.ID);
+    const packageZip = await readPackageZip(versionObj.packageID, versionObj.ID);
     res.status(200).send({
       metadata: {
-        Name: PackageService.getPackageName(versionObj.packageID),
+        Name: await PackageService.getPackageName(versionObj.packageID),
         Version: versionObj.version,
-        ID: IDStr,
+        ID: id,
       },
       data: {
         Content: packageZip,
-        JSProgram: "", // TODO: Implement
+        JSProgram: versionObj.JSProgram, 
       }
     });
   } catch {

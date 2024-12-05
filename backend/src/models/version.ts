@@ -9,7 +9,7 @@ export class Version extends Model<VersionAttributes, VersionCreationAttributes>
   public author!: string;
   public accessLevel!: string;
   public timestamp!: Date;
-  public programPath!: string;
+  public JSProgram!: string;
   public packageUrl!: string;
 
   public readonly createdAt!: Date;
@@ -38,7 +38,7 @@ Version.init({
     type: new DataTypes.STRING(128),
     allowNull: true
   },
-  programPath: {
+  JSProgram: {
     type: new DataTypes.STRING(128),
     allowNull: true
   },
@@ -49,5 +49,11 @@ Version.init({
 }, {
   sequelize,
   tableName: 'versions',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['packageID', 'version']
+    }
+  ]
 });

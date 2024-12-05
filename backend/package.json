@@ -8,7 +8,10 @@
   "scripts": {
     "test": "npx jest",
     "test:cov": "npx jest --coverage",
-    "test:ci": "npx jest --ci"
+    "test:ci": "npx jest --ci",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/server",
+    "clean": "rm -rf dist"
   },
   "author": "",
   "license": "ISC",
@@ -31,9 +34,11 @@
     "tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.703.0",
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
+    "depcheck": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "jsonwebtoken": "^9.0.2",
@@ -42,6 +47,7 @@
     "semver": "^7.6.3",
     "sequelize": "^6.37.4",
     "tar": "^7.4.3",
+    "winston": "^3.17.0",
     "zod": "^3.23.8"
   }
 }

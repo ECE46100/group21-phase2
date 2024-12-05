@@ -1,8 +1,9 @@
 **/package-lock.json
 **/node_modules
 **/dist
+**/coverage
+**/.env
 /db
 /backend/packages
 /backend/unzipped
 /backend/conversion
-**/.env

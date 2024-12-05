@@ -6,21 +6,36 @@ on:
       - main
 jobs:
   build:
+    if: github.repository == 'ECE46100/group21-phase2'
     name: deploy
     runs-on: ubuntu-latest
       
     steps:
       - name: fetch code
         uses: actions/checkout@v4
-
-      - name: install dependencies
+        with:
+          submodules: true
+          
+      - name: install dependencies (backend)
         run: npm install
         working-directory: backend
 
-      - name: compile to js
-        run: npx tsc
+      - name: install dependencies (frontend)
+        run: npm install
+        working-directory: frontend
+
+      - name: install dependencies (phase1 handoff)
+        run: npm install
+        working-directory: backend/group21-phase1-handoff
+
+      - name: build backend
+        run: npm run build
         working-directory: backend
 
+      - name: build phase1 handoff
+        run: npx tsc
+        working-directory: backend/group21-phase1-handoff
+        
       - name: deploy with rsync
         uses: burnett01/rsync-deployments@5.1
         with:
@@ -33,21 +48,47 @@ jobs:
           
       - name: configure env and run
         run: |
-          echo "${{ secrets.SSH_KEY }}" > private_key && 
-          chmod 600 private_key &&
+          echo "${{ secrets.SSH_KEY }}" > private_key 
+          chmod 600 private_key
           ssh -o StrictHostKeyChecking=no -i private_key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} '
 
-            cd ~/app_deployment/backend &&
+            cd ~/app_deployment/backend
+            # npm install
+            # npm run build
+            # cd group21-phase1-handoff
+            # npm install
+            # npx tsc
+            # cd ../
             # configure env
-            touch .env &&
-            echo DB_HOST=${{ secrets.DB_HOST }} >> .env &&
-            echo DB_USER=${{ secrets.DB_USER }} >> .env &&
-            echo DB_NAME=${{ secrets.DB_NAME }} >> .env &&
-            echo DB_PASS=${{ secrets.DB_PASS }} >> .env &&
+            touch .env
+            echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+            echo DB_USER=${{ secrets.DB_USER }} >> .env
+            echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+            echo DB_PASS=${{ secrets.DB_PASS }} >> .env
 
-            echo AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }} >> .env &&
-            echo AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env &&
+            echo AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY }} >> .env
+            echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env
+            echo AWS_REGION='us-east-2' >> .env
             echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
+
+            cd ../frontend
+            # npm install
+            touch .env
+            echo PORT=4000 >> .env
+
+            cd ../backend
+            if tmux has-session -t backend 2>/dev/null; then
+              tmux kill-session -t backend
+            fi
+            tmux new-session -d -s backend
+            tmux send-keys -t backend "npm run start" C-m
+
+            # cd ../frontend
+            # if tmux has-session -t frontend 2>/dev/null; then
+            #   tmux kill-session -t frontend
+            # fi
+            # tmux new-session -d -s frontend
+            # tmux send-keys -t frontend "npm run start" C-m
             '
 
           

@@ -16,12 +16,16 @@ declare module 'package-types' {
     packageID: number;
     author: string;
     accessLevel: string;
-    programPath: string; // TODO: maybe should be located in the package table
+    JSProgram: string; // TODO: maybe should be located in the package table
     packageUrl: string; // TODO: maybe should be located in the package table
   }
   
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
+  // export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> {}
+  // CLS modified the following since we might need to create version with a specific version ID in update
+  export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> { 
+    ID?: number; // Optional to allow for manual insertion
+  }
 
   /* Item in package search result */
   export interface PackageSearchResult {
@@ -65,5 +69,16 @@ declare module 'package-types' {
   /* Expected schema for github api */
   export interface GitHubResponse {
     name: string;
+  }
+
+  export interface GitHubPackageJson {
+    content: string;
+  }
+
+  export interface PackageJsonFields {
+    repository: string | { url: string };
+    homepage: string;
+    name: string;
+    version: string;
   }
 }

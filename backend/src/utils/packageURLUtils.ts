@@ -3,7 +3,7 @@ import axios from "axios";
 import { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import semver from "semver";
-import { PackageUrlObject, NPMResponse, GitHubResponse } from "package-types";
+import { PackageUrlObject, NPMResponse, GitHubResponse, GitHubPackageJson, PackageJsonFields } from "package-types";
 dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -14,12 +14,12 @@ if (!GITHUB_TOKEN) {
 export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
 
-  if (parsedUrl.hostname === 'www.github.com') {
+  if (parsedUrl.hostname.includes('github.com')) {
     return await handleGitHubUrl(parsedUrl);
-  } else if (parsedUrl.hostname === 'www.npmjs.com') {
+  } else if (parsedUrl.hostname.includes('npmjs.com')) {
     return await handleNpmUrl(parsedUrl);
   } else {
-    throw new Error('Unsupported URL Hostname');
+    throw new Error(`Unsupported URL Hostname`);
   }
 }
 
@@ -48,9 +48,14 @@ async function handleNpmUrl(parsedUrl: URL): Promise<PackageUrlObject> {
       version = response.data.version;
     }
 
+    if (response.data.name !== name) {
+      name = response.data.name;
+    }
+
     const tarBallUrl = response.data.dist.tarball;
 
     const tarFile = await downloadTarUrl(tarBallUrl);
+    version = semver.coerce(version)?.version ?? '1.0.0';
 
     return { name, version, content: tarFile };
   } catch (err: unknown) {
@@ -73,20 +78,40 @@ async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
 
   const repo = pathParts.pop()!;
   const owner = pathParts.pop()!;
+
   try {
     if (!tag) {
       tag = await getLatestTag(owner, repo);
     }
+    let GITHUB_API_URL;
+    if (tag) {
+      GITHUB_API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/package.json?ref=${tag}`;
+    } else {
+      GITHUB_API_URL = `https://api.github.com/repos/${owner}/${repo}/contents/package.json`;
+    }
+
+    const response: AxiosResponse<GitHubPackageJson> = await axios.get(GITHUB_API_URL, {
+      headers: {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+      },
+    });
+    if (response.status !== 200) {
+      throw new Error('Failed to fetch package');
+    }
+
+    const packageJson: PackageJsonFields = JSON.parse(Buffer.from(response.data.content, 'base64').toString()) as PackageJsonFields;
+    const name = packageJson.name;
+    const version = semver.coerce(packageJson.version)?.version ?? '1.0.0';
 
     if (tag) {
       const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball/${tag}`;
       const tarFile = await downloadTarUrl(tarballUrl, {'Authorization': `Bearer ${GITHUB_TOKEN}`});
       tag = semver.coerce(tag)?.version ?? '1.0.0';
-      return { name: repo, version: tag, content: tarFile };
+      return { name: name, version: version, content: tarFile };
     } else {
-      const tarballUrl = `https://github.com/${owner}/${repo}/tarball/`;
+      const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball`;
       const tarFile = await downloadTarUrl(tarballUrl, {'Authorization': `Bearer ${GITHUB_TOKEN}`});
-      return { name: repo, version: '1.0.0', content: tarFile };
+      return { name: name, version: version, content: tarFile };
 
     }
   } catch (err: unknown) {
