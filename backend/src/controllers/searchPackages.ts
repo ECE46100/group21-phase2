@@ -44,7 +44,7 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 }
 
 export default async function searchPackages(req: Request, res: Response) {
-  logger.info(`body: , ${req.body}`);
+  logger.info(`body: , ${JSON.stringify(req.body)}`);
   const requestOffset = req.query ? req.query.offset : null;
   const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
   if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {
