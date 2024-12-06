@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageLayout from './pageLayout';
+
+interface PackageMetadata {
+  ID: string;
+  Name: string;
+  Version: string;
+}
 
 const UploadPage: React.FC = () => {
   const [packageName, setPackageName] = useState<string>('');
-  const [uploadMethod, setUploadMethod] = useState<'file' | 'url'>('file');
-  const [description, setDescription] = useState<string>('');
   const [debloat, setDebloat] = useState<boolean>(false);
-  const [url, setUrl] = useState<string>('');
+  const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState<string>(''); // URL-based upload
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
@@ -19,16 +23,20 @@ const UploadPage: React.FC = () => {
     }
   }, []);
 
-  const handleUploadMethodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const method = e.target.value as 'file' | 'url';
-    setUploadMethod(method);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const selectedFile = e.target.files[0];
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Clear file input
-    }
+      const isZipFile = selectedFile.type === 'application/zip' || selectedFile.name.endsWith('.zip');
 
-    if (method === 'file') {
-      setUrl(''); // Clear URL input
+      if (!isZipFile) {
+        alert('Please select a ZIP file.');
+        e.target.value = '';
+        setFile(null);
+      } else {
+        setFile(selectedFile);
+        setUrl(''); // Clear URL input when a file is selected
+      }
     }
   };
 
@@ -40,60 +48,42 @@ const UploadPage: React.FC = () => {
       return;
     }
 
+    if (!file && !url) {
+      alert('Please provide either a ZIP file or a URL for the upload.');
+      return;
+    }
+
     try {
-      let payload: any = null;
+      let payload: any = {
+        Name: packageName,
+        debloat,
+        JSProgram: `if (process.argv.length === 7) {
+console.log('Success')
+process.exit(0)
+} else {
+console.log('Failed')
+process.exit(1)
+}`,
+      };
 
-      if (uploadMethod === 'file') {
-        const fileInput = fileInputRef.current;
-
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-          alert('Please select a ZIP file to upload.');
-          return;
-        }
-
-        const file = fileInput.files[0];
+      if (file) {
         const fileContent = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = () => {
             if (typeof reader.result === 'string') {
-              resolve(reader.result.split(',')[1]); // Get base64 data part
+              resolve(reader.result.split(',')[1]); // Extract base64 content
             }
           };
           reader.onerror = (error) => reject(error);
           reader.readAsDataURL(file);
         });
 
-        payload = {
-          Content: fileContent,
-          JSProgram: `if (process.argv.length === 7) {
-console.log('Success')
-process.exit(0)
-} else {
-console.log('Failed')
-process.exit(1)
-}`,
-          debloat,
-          Name: packageName,
-        };
-      } else if (uploadMethod === 'url') {
-        if (!url) {
-          alert('Please provide a valid URL.');
-          return;
-        }
-
-        payload = {
-          URL: url,
-          JSProgram: `if (process.argv.length === 7) {
-console.log('Success')
-process.exit(0)
-} else {
-console.log('Failed')
-process.exit(1)
-}`,
-        };
+        payload.Content = fileContent;
+      } else if (url) {
+        payload.URL = url;
       }
 
-      console.log('Payload:', payload);
+      console.log('Payload:', payload); // Debug log
 
       const response = await fetch('/package', {
         method: 'POST',
@@ -104,9 +94,14 @@ process.exit(1)
         body: JSON.stringify(payload),
       });
 
+
+      console.log('Response:', response); // Debug log
+
       if (response.status === 201) {
-        const responseData = await response.json();
-        alert(`Package uploaded successfully! ID: ${responseData.metadata.ID}`);
+        console.log("hi");
+        const responseData: PackageMetadata[] = await response.json();
+        console.log(responseData);
+        alert(`Package uploaded successfully!`);
       } else if (response.status === 400) {
         alert('Upload failed: Missing fields or invalid data.');
       } else if (response.status === 403) {
@@ -142,51 +137,31 @@ process.exit(1)
 
         <div style={{ marginBottom: '15px' }}>
           <label>
-            Upload Method:
-            <select
-              value={uploadMethod}
-              onChange={handleUploadMethodChange}
-              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-            >
-              <option value="file">Upload ZIP File</option>
-              <option value="url">Upload via URL</option>
-            </select>
+            Upload ZIP File:
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e)}
+              ref={(input) => {
+                if (url) {
+                  input && (input.value = ''); // Clear file input if URL is set
+                }
+              }}
+              style={{ display: 'block', marginTop: '5px' }}
+            />
           </label>
         </div>
 
-        {uploadMethod === 'file' ? (
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Upload File:
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'block', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-        ) : (
-          <div style={{ marginBottom: '15px' }}>
-            <label>
-              Package URL:
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                required
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-              />
-            </label>
-          </div>
-        )}
-
         <div style={{ marginBottom: '15px' }}>
           <label>
-            Description:
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
+            Or Provide URL for the Package:
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setFile(null); // Clear file state if URL is set
+              }}
+              placeholder="https://example.com/package.zip"
               style={{ width: '100%', padding: '8px', marginTop: '5px' }}
             />
           </label>
@@ -198,7 +173,6 @@ process.exit(1)
               type="checkbox"
               checked={debloat}
               onChange={(e) => setDebloat(e.target.checked)}
-              style={{ marginRight: '5px' }}
             />
             Enable Debloat
           </label>

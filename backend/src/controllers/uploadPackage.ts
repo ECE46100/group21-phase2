@@ -43,7 +43,6 @@ export default async function uploadPackage(req: Request, res: Response) {
         res.status(409).send('Package already exists');
         return;
       }
-
       const packageID = await PackageService.getPackageID(name);
       try {
         await PackageService.createVersion({
@@ -58,7 +57,6 @@ export default async function uploadPackage(req: Request, res: Response) {
         res.status(409).send('Version already exists');
         return;
       }
-
       const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
 
       // Write the package to the file system
@@ -67,7 +65,6 @@ export default async function uploadPackage(req: Request, res: Response) {
       } else {
         await writePackageZip(packageID!, versionID!, contentRequest.Content);
       }
-      
       const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
       if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
         const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
@@ -87,7 +84,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: contentRequest.JSProgram,
         }
       }
-      res.status(200).send(response);
+      res.status(201).send(response);
       return;
     } catch (err) {
       logger.error(err);
@@ -134,7 +131,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: urlRequest.JSProgram,
         }
       }
-      res.status(200).send(response);
+      res.status(201).send(response);
       return;
     } catch (err) {
       logger.error(err);
