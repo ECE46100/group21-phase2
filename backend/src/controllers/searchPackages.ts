@@ -1,6 +1,7 @@
 import PackageService from "../services/packageService";
 import { Request, Response } from "express";
 import { z } from "zod";
+import { logger } from "../utils/logUtils";
 
 const PackageQuerySchema = z.object({
   Name: z.string(),
@@ -43,6 +44,7 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 }
 
 export default async function searchPackages(req: Request, res: Response) {
+  logger.info(`body: , ${req.body}`);
   const requestOffset = req.query ? req.query.offset : null;
   const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
   if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {

@@ -54,7 +54,7 @@ User.init({
   },
   tokenUses: {
     type: DataTypes.INTEGER,
-    defaultValue: 0, // originally set to 0 but the 1000 in verify token didn't work which blocks searching, delete this if needed
+    defaultValue: 1000, // originally set to 0 but the 1000 in verify token didn't work which blocks searching, delete this if needed
     allowNull: false
   }
 }, {
