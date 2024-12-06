@@ -8,9 +8,10 @@ import { PackageJsonFields } from 'package-types';
 import { z } from 'zod';
 
 const ContentRequestSchema = z.object({
+  Version: z.string().default('1.0.0'),
   Content: z.string(),
   JSProgram: z.string().optional(),
-  debloat: z.boolean(),
+  debloat: z.boolean().default(false),
   Name: z.string(),
 });
 
@@ -48,7 +49,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       const packageID = await PackageService.getPackageID(name);
       try {
         await PackageService.createVersion({
-          version: '1.0.0',
+          version: contentRequest.Version,
           packageID: packageID!,
           author: req.middleware.username,
           accessLevel: 'public',
@@ -80,7 +81,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       const response = {
         metadata: {
           Name: name,
-          Version: '1.0.0',
+          Version: contentRequest.Version,
           ID: versionID!,
         },
         data: {

@@ -4,8 +4,8 @@ import { z } from "zod";
 import { logger } from "../utils/logUtils";
 
 const PackageQuerySchema = z.object({
-  Name: z.string(),
-  Version: z.string().transform((version) => {
+  Name: z.string().default('*'),
+  Version: z.string().default('*').transform((version) => {
     if (version.includes("-")) {
       const [start, end] = version.split("-");
       return `${start.trim()} - ${end.trim()}`;
@@ -19,7 +19,6 @@ type ValidPackageQuery = z.infer<typeof PackageQuerySchema>;
 function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   // const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
   const validSemVerRegex = /^(?:\*|(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?)$/; // allow wildcard '*'(when no version is specified)
-
 
   if (!Array.isArray(query)) throw new Error("Invalid query");
 
