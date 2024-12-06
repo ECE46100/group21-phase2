@@ -28,6 +28,7 @@ export default async function uploadPackage(req: Request, res: Response) {
     const contentRequest = req.body as ValidContentRequest;
     // Check if the name exists in the database
     const name = contentRequest.Name;
+    logger.info('body: ', contentRequest.Name, contentRequest.debloat);
     if (await PackageService.getPackageID(name)) {
       res.status(409).send('Package already exists');
       return;
@@ -87,7 +88,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: contentRequest.JSProgram,
         }
       }
-      res.status(200).send(response);
+      res.status(201).send(response);
       return;
     } catch (err) {
       logger.error(err);
@@ -134,7 +135,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: urlRequest.JSProgram,
         }
       }
-      res.status(200).send(response);
+      res.status(201).send(response);
       return;
     } catch (err) {
       logger.error(err);
