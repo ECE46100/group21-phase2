@@ -20,7 +20,7 @@ sequelize.sync({ force: true }).then(async () => {
   await resetBucket();
   await UserService.createUser({
     username: 'ece30861defaultadminuser',
-    password: "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;", // The original would've been correct
+    password: "correcthorsebatterystaple123(!__+@**(A'\"`;DROP TABLE packages;",
     adminPerm: true,
     searchPerm: true,
     downloadPerm: true,
