@@ -27,10 +27,12 @@ class PackageService {
   }
 
   public async getAllVersions(packageID: number): Promise<Version[]> {
-    return await Version.findAll({
-      where: { packageID: packageID },
-      order: [['createdAt', 'ASC']],
-    });
+    try {
+      return await Version.findAll({ where: { packageID } });
+    } catch (err) {
+      console.error('Error in getAllVersions:', err);
+      throw new Error('Failed to retrieve versions');
+    }
   }  
 
   public async getVersionID(packageID: number, version: string): Promise<number | null> {
