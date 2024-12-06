@@ -18,6 +18,7 @@ declare module 'package-types' {
     accessLevel: string;
     JSProgram: string; // TODO: maybe should be located in the package table
     packageUrl: string; // TODO: maybe should be located in the package table
+    readme?: string;
   }
   
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -25,6 +26,7 @@ declare module 'package-types' {
   // CLS modified the following since we might need to create version with a specific version ID in update
   export interface VersionCreationAttributes extends Omit<VersionAttributes, 'ID'> { 
     ID?: number; // Optional to allow for manual insertion
+    readme?: string;
   }
 
   /* Item in package search result */
