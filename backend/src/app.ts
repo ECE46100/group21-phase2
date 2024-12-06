@@ -16,8 +16,6 @@ import reset from './controllers/reset';
 
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
 import UserService from './services/userService';
-import PackageService from './services/packageService';
-import packageService from './services/packageService';
 
 const router = Router();
 
