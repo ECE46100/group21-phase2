@@ -27,7 +27,7 @@ UserGroup.init({
     allowNull: true,
   },
 }, {
-  tableName: 'usergroups', // If we set tableName: "userGroups" psql cannot find it
+  tableName: 'userGroups', // use doble quotes "userGroups" in psql to find it
   sequelize,
   timestamps: true,
 });
