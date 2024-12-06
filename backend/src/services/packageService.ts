@@ -155,12 +155,6 @@ class PackageService {
       where: {
         readme: { [Op.regexp]: regexObj.source },
       },
-      include: [
-        {
-          model: Package, // Include related package details
-          attributes: ["name"], // Only fetch package name
-        },
-      ],
       order: [["createdAt", "ASC"]],
     });
 
@@ -189,6 +183,13 @@ class PackageService {
       console.error("Error in getPackagesByRegex:", err);
       throw new Error("Failed to retrieve packages");
     }
+  }
+
+  public async updateReadme(versionID: number, readmeContent: string) {
+    await Version.update(
+      { readme: readmeContent },
+      { where: { ID: versionID } }
+    );
   }
   
   public async createVersion(versionObj: VersionCreationAttributes): Promise<undefined> {
