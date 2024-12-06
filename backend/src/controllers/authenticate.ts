@@ -34,7 +34,7 @@ export default async function authenticate(req: Request, res: Response) {
     const isValidUser = await UserService.verifyUser(user.name, secret.password);
     if (isValidUser) {
       const token = await UserService.generateToken(user.name);
-      res.status(200).send(token);
+      res.status(200).send(`bearer ${token}`);
     } else {
       res.status(401).send('Unauthorized');
     }
