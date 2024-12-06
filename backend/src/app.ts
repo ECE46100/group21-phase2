@@ -65,6 +65,7 @@ router.post('/package', authMiddleware, permMiddleware, async (req: Request, res
   return await uploadPackage(req, res);
 });
 
+
 router.get('/package/:id/rate', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');

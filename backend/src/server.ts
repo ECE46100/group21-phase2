@@ -5,6 +5,7 @@ import resetBucket from "./utils/resetUtil";
 import UserService from "./services/userService";
 // import PackageService from "./services/packageService";
 import { requestLogger } from "./utils/logUtils";
+import PackageService from "./services/packageService";
 
 const app = express();
 
