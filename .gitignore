@@ -8,3 +8,6 @@
 /backend/packages
 /backend/unzipped
 /backend/conversion
+/backend/coverage
+**/.env
+/backend/logs

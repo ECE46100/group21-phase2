@@ -3,7 +3,7 @@ import { Response, NextFunction } from "express";
 import { Request } from "express-serve-static-core";
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const token = req.header("X-Authorization");
+  const token = req.header("X-Authorization")?.split(" ")[1];
   if (!token) {
     res.status(403).send("Unauthorized - no token provided");
     return;
