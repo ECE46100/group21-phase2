@@ -24,11 +24,11 @@ type ValidURLRequest = z.infer<typeof URLRequestSchema>;
 
 export default async function uploadPackage(req: Request, res: Response) {
   // Check formatting of request body
+  logger.info(`body: , ${req.body}`);
   if (ContentRequestSchema.safeParse(req.body).success) {
     const contentRequest = req.body as ValidContentRequest;
     // Check if the name exists in the database
     const name = contentRequest.Name;
-    logger.info('body: ', contentRequest.Name, contentRequest.debloat);
     if (await PackageService.getPackageID(name)) {
       res.status(409).send('Package already exists');
       return;
