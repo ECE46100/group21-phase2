@@ -23,6 +23,7 @@ export default async function ratePackage(req: Request, res: Response) {
     const packageUrl = versionObj.packageUrl;
     try{
         const result: PackageRating = JSON.parse(await getRating(packageUrl)) as PackageRating;
+        console.log(result);
         res.status(200).send(result);
     } catch{
         res.status(500).send('The package rating system choked on at least one of the metrics.');

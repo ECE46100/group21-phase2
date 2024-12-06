@@ -1,7 +1,9 @@
 import { getRating } from "../../bridge/phase1-bridge";
 
-getRating("https://github.com/debug-js/debug").then((result) => {
+getRating("git+https://github.com/Gninoskcaj/easy-math-module.git").then((result) => {
   console.log(result);
+}).catch((err) => {
+  console.error(err);
 });
 
   
