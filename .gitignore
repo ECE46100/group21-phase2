@@ -4,6 +4,7 @@
 **/coverage
 **/.env
 /db
+/test-results
 /backend/packages
 /backend/unzipped
 /backend/conversion
