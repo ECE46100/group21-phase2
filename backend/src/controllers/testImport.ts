@@ -1,7 +1,7 @@
-// import { ratePackage } from "../../bridge/phase1-bridge";
+import { getRating } from "../../bridge/phase1-bridge";
 
-// ratePackage("https://www.npmjs.com/package/express").then((result) => {
-//   console.log(result);
-// });
+getRating("https://github.com/debug-js/debug").then((result) => {
+  console.log(result);
+});
 
   

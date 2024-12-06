@@ -8,14 +8,14 @@ export default async function ratePackage(req: Request, res: Response) {
 
     if (!IDStr || isNaN(parseInt(IDStr))) {
       console.log(`in downloadPackage.ts/downloadPackage(), IDStr = ${IDStr? IDStr : 'missing'}`);
-      res.status(400).send('There is missing field(s) in the PackageID');
+      res.status(404).send('Package Not Found');
       return;
     }
     const ID = parseInt(IDStr);
   
     const versionObj = await PackageService.getPackageVersion(ID);
     if (!versionObj) {
-      res.status(404).send('Package does not exists.');
+      res.status(404).send('Package Not Found');
       return;
     }
 
