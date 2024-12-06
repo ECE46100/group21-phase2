@@ -6,7 +6,7 @@ export default async function downloadPackage(req: Request, res: Response) {
   const id = req.params.id;
 
   if (!id || isNaN(parseInt(id))) {
-    res.status(400).send('Invalid request');
+    res.status(404).send('Package not found');
     return;
   }
 
