@@ -88,8 +88,13 @@ router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Requ
   return await searchByRegEx(req, res);
 });
 
-router.get('/track', (req: Request, res: Response) => {
-  res.status(200).send("Access control track");
+router.get('/tracks', (req: Request, res: Response) => {
+  const trackObject = {
+    plannedTracks: [
+      "Access control track",
+    ]
+  }
+  res.status(200).send(trackObject);
   return;
 });
 
