@@ -5,7 +5,7 @@ import PackageService from '../services/packageService';
 export default async function ratePackage(req: Request, res: Response) {
     const IDStr = req.params.id;
 
-    if (!IDStr || Number.isNaN(IDStr)) {
+    if (!IDStr || isNaN(parseInt(IDStr))) {
       console.log(`in downloadPackage.ts/downloadPackage(), IDStr = ${IDStr? IDStr : 'missing'}`);
       res.status(400).send('There is missing field(s) in the PackageID');
       return;
