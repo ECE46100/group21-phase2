@@ -69,14 +69,14 @@ export default async function uploadPackage(req: Request, res: Response) {
       } else {
         await writePackageZip(packageID!, versionID!, contentRequest.Content);
       }
-      
-      // const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
-      // if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
-      //   const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
-      //   await PackageService.updatePackageUrl(versionID!, packageUrl);
-      // } else if (packageJson.homepage && typeof packageJson.homepage === 'string' && (packageJson.homepage.includes('github.com') || packageJson.homepage.includes('npmjs.com'))) {
-      //   await PackageService.updatePackageUrl(versionID!, packageJson.homepage);
-      // }
+      console.log(packageID, versionID);
+      const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
+      if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
+        const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
+        await PackageService.updatePackageUrl(versionID!, packageUrl);
+      } else if (packageJson.homepage && typeof packageJson.homepage === 'string' && (packageJson.homepage.includes('github.com') || packageJson.homepage.includes('npmjs.com'))) {
+        await PackageService.updatePackageUrl(versionID!, packageJson.homepage);
+      }
 
       const response = {
         metadata: {
