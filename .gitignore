@@ -6,5 +6,5 @@
 /backend/unzipped
 /backend/conversion
 /backend/coverage
-/backend/logs
 **/.env
+/backend/logs
