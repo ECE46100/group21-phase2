@@ -1,4 +1,5 @@
 import { User } from "../models/user";
+import { UserGroup } from "../models/userGroup"
 import * as auth from "../utils/authUtils";
 import type { UserAttributes, UserCreationAttributes, UserPerms } from "user-types";
 
@@ -78,15 +79,15 @@ class UserService {
     try {
       const username = await auth.verifyToken(token);
       const user = await this.getUser(username);
-      // console.log(`in userService.ts verifyToken(), token : ${user?.tokenUses}`); //delete this
+      console.log(`in userService.ts verifyToken(), token : ${user?.tokenUses}`); //delete this
       if (user) {
         if (user.tokenUses > 0) {
           await User.update({ tokenUses: user.tokenUses - 1 }, { where: { ID: user.ID } }); // TODO: Potential Race Condition
-          // console.log('in userService.ts verifyToken(), tokenUses > 0'); // delete this
-          // console.log(` after update, tokenUses : ${user.tokenUses}`);
+          console.log('in userService.ts verifyToken(), tokenUses > 0'); // delete this
+          console.log(` after update, tokenUses : ${user.tokenUses}`);
           return username;
         } else {
-          // console.log('in userService.ts verifyToken(), tokenUses < 0'); // delete this
+          console.log('in userService.ts verifyToken(), tokenUses < 0'); // delete this
           throw new Error("Token uses exceeded");
         }
       }
@@ -125,6 +126,24 @@ class UserService {
       };
     }
     throw new Error("User not found");
+  }
+
+  /**
+   * Creates a userGroup
+   * @param groupName: string
+   * @param description: string (optional)
+   * @returns undefined if successful, Error if failed
+   */
+  public async createUserGroup(groupName: string, description?: string): Promise<undefined> {
+    try {
+      await UserGroup.create({
+        name: groupName,
+        ...(description && { description }) // if description is provided 
+      });
+      return;
+    } catch (err: unknown) {
+      throw new Error(err as string);
+    }
   }
 }
 

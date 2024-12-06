@@ -1,7 +1,10 @@
 **/package-lock.json
 **/node_modules
 **/dist
+**/coverage
+**/.env
 /db
+/test-results
 /backend/packages
 /backend/unzipped
 /backend/conversion

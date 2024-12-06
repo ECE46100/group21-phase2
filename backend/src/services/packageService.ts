@@ -1,7 +1,9 @@
 import { Package } from '../models/package';
 import { Version } from '../models/version';
+import { PackageHistory } from '../models/packageHistory';
 import { PackageCreationAttributes, VersionCreationAttributes } from 'package-types';
 import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-types';
+import { HistoryResult } from 'package-history-types';
 import { satisfies } from 'semver';
 import { Op } from 'sequelize';
 
@@ -133,7 +135,8 @@ class PackageService {
         // Map each version as a separate result
         for (const version of versions) {
           result.push({
-            ID: pkg.ID.toString(),
+            // ID: pkg.ID.toString(),
+            ID: version.ID.toString(), // should return versionID
             Name: pkg.name,
             Version: version.version, // Include the version
           });
@@ -168,6 +171,70 @@ class PackageService {
       throw new Error(err as string);
     }
   }
+
+  public async createHistory(versionID: number, action:string): Promise<HistoryResult[]> {
+    try {
+      const historyRecords = await PackageHistory.findAll({
+        where: {
+          [Op.and]: [
+            // Query the `PackageMetadata` JSON object for `ID`
+            { 'PackageMetadata.ID': versionID.toString() },
+            // Optionally filter by action
+            { Action: action },
+          ],
+        },
+      });
+
+      // Transform the raw Sequelize data into the desired `HistoryResult` format
+      return historyRecords.map((record) => {
+        const data = record.toJSON();
+        return {
+          User: data.User, // HistoryUserEntry
+          Date: data.Date, // ISO format string
+        } as HistoryResult;
+      });
+    } catch (err) {
+      console.error('Error fetching package history:', err);
+      throw new Error('Could not retrieve package history.');
+    }
+  }
+
+  /**
+   * gets history of a version
+   * @param versionID 
+   * @param action what was performed on this version
+   * @returns an array of {HistoryUserEntry, date}, indicating who(user) did what(action) at when(date)
+   * HistoryUserEntry : {
+   *   name : string,
+   *   isAdmin: boolean,
+   * }*/
+  public async getHistory(versionID: number, action:string): Promise<HistoryResult[]> {
+    try {
+      const historyRecords = await PackageHistory.findAll({
+        where: {
+          [Op.and]: [
+            // Query the `PackageMetadata` JSON object for `ID`
+            { 'PackageMetadata.ID': versionID.toString() },
+            // Optionally filter by action
+            { Action: action },
+          ],
+        },
+      });
+
+      // Transform the raw Sequelize data into the desired `HistoryResult` format
+      return historyRecords.map((record) => {
+        const data = record.toJSON();
+        return {
+          User: data.User, // HistoryUserEntry
+          Date: data.Date, // ISO format string
+        } as HistoryResult;
+      });
+    } catch (err) {
+      console.error('Error fetching package history:', err);
+      throw new Error('Could not retrieve package history.');
+    }
+  }
+
 }
 
 export default new PackageService();
