@@ -16,6 +16,8 @@ const Home: React.FC = () => {
           <li><Link to="/update">Update</Link></li>
           <li><Link to="/rating">Rating</Link></li>
           <li><Link to="/download">Download</Link></li>
+          <li><Link to="/manageUsers">Users</Link></li>
+          <li><Link to="/history">History</Link></li>
         </ul>
       </nav>
 

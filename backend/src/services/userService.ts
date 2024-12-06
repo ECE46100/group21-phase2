@@ -2,6 +2,7 @@ import { User } from "../models/user";
 import { UserGroup } from "../models/userGroup"
 import * as auth from "../utils/authUtils";
 import type { UserAttributes, UserCreationAttributes, UserPerms } from "user-types";
+import type { UserGroupAttributes } from "userGroup-types";
 
 class UserService {
   /**
@@ -143,6 +144,30 @@ class UserService {
       return;
     } catch (err: unknown) {
       throw new Error(err as string);
+    }
+  }
+
+  /**
+ * get a userGroup with group name
+ * @param groupName: string
+ * @returns undefined if successful, Error if failed
+ */
+  public async getGroupByName(groupName: string): Promise<UserGroupAttributes|null> {
+    return await UserGroup.findOne({ where: { name: groupName } });
+  }
+
+  /**
+ * get a userGroup with group name
+ * @param groupName: string
+ * @returns undefined if successful, Error if failed
+ */
+  public async getAllGroups(): Promise<UserGroupAttributes[]|null> {
+    try {
+      const groups = await UserGroup.findAll();
+      return groups.map((group) => group.toJSON());
+    } catch (error) {
+      console.error('Error fetching all user groups:', error);
+      throw new Error('Failed to fetch user groups.');
     }
   }
 }

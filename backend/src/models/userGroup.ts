@@ -27,7 +27,7 @@ UserGroup.init({
     allowNull: true,
   },
 }, {
-  tableName: 'userGroups',
+  tableName: 'usergroups', // If we set tableName: "userGroups" psql cannot find it
   sequelize,
   timestamps: true,
 });

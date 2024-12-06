@@ -98,7 +98,6 @@ process.exit(1)
       console.log('Response:', response); // Debug log
 
       if (response.status === 201) {
-        console.log("hi");
         const responseData: PackageMetadata[] = await response.json();
         console.log(responseData);
         alert(`Package uploaded successfully!`);
