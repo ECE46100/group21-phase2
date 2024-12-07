@@ -34,6 +34,10 @@ const ContentUpdateSchema = z.object({
 export default async function updatePackage(req: Request, res: Response) {
   // Validate the request body against the schema
   const versionID = parseInt(req.params.id); // e.g., 123567192081501
+  if (isNaN(versionID)) {
+    res.status(404).send('Version does not exist.');
+    return;
+  }
   const version = await PackageService.getPackageVersion(versionID);
   if (!version) {
     res.status(404).send('Version does not exist.');
