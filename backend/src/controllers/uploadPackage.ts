@@ -132,6 +132,17 @@ export default async function uploadPackage(req: Request, res: Response) {
       const versionID = await PackageService.getVersionID(packageID!, packageData.version);
       await writeZipFromTar(packageID!, versionID!, packageData.content);
       const zippedContents = await readPackageZip(packageID!, versionID!);
+
+      const readmeContent = await extractReadme(packageID!, versionID!);
+
+      // Save README content to the database
+      if (readmeContent) {
+        console.log("README Content:");
+        console.log(readmeContent); // Print the README content
+        await PackageService.updateReadme(versionID!, readmeContent);
+
+      }
+
       const response = {
         metadata: {
           Name: name,
