@@ -33,7 +33,18 @@ const ContentUpdateSchema = z.object({
 
 export default async function updatePackage(req: Request, res: Response) {
   // Validate the request body against the schema
-  logger.info(`body: , ${JSON.stringify(req.body)}`);
+  const versionID = parseInt(req.params.id); // e.g., 123567192081501
+  const version = await PackageService.getPackageVersion(versionID);
+  if (!version) {
+    res.status(404).send('Version does not exist.');
+    return;
+  }
+  const existingName = await PackageService.getPackageName(version?.packageID);
+  if (!existingName) {
+    res.status(404).send('Package does not exist.');
+    return;
+  }
+  
   const validationResult = ContentUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
     logger.info('Request Failed Validation');
@@ -50,14 +61,8 @@ export default async function updatePackage(req: Request, res: Response) {
   }
 
   // Check if the package to update exists
-  const versionID = parseInt(req.params.id); // e.g., 123567192081501
-  const version = await PackageService.getPackageVersion(versionID);
   const packageName = metadata.Name;
   const packageID = await PackageService.getPackageID(packageName);
-  if (!packageID || packageID!=version?.packageID) {
-    res.status(404).send('Package does not exist.');
-    return;
-  }
 
   // Check if the package requires content upload
   const _package = await PackageService.getPackageByID(packageID);
