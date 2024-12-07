@@ -8,9 +8,14 @@ import uploadPackage from './controllers/uploadPackage';
 import updatePackage from './controllers/updatePackage';
 import ratePackage from './controllers/ratePackage';
 import downloadPackage from './controllers/downloadPackage';
+import createUser from './controllers/createUser';
+import createUserGroup from './controllers/createUserGroup';
+import deleteUser from './controllers/deleteUser';
+import getHistory from './controllers/getHistory';
 import reset from './controllers/reset';
 
 import { authMiddleware, permMiddleware } from './middleware/auth_middleware';
+import UserService from './services/userService';
 
 const router = Router();
 
@@ -41,7 +46,7 @@ router.delete('/reset', authMiddleware, permMiddleware, async (req: Request, res
 
 
 router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
+  if (!req.middleware.permissions.downloadPerm) {
     res.status(401).send('Unauthorized - missing permissions');
     return;
   }
@@ -49,7 +54,7 @@ router.get('/package/:id', authMiddleware, permMiddleware, async (req: Request, 
 });
 
 router.post('/package/:id', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
+  if (!req.middleware.permissions.uploadPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
   }
@@ -58,7 +63,7 @@ router.post('/package/:id', authMiddleware, permMiddleware, async (req: Request,
 
 
 router.post('/package', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  if (!req.middleware.permissions.uploadPerm && !req.middleware.permissions.adminPerm) {
+  if (!req.middleware.permissions.uploadPerm) {
     res.status(401).send('Unauthorized - missing permissions');
     return;
   }
@@ -67,7 +72,7 @@ router.post('/package', authMiddleware, permMiddleware, async (req: Request, res
 
 
 router.get('/package/:id/rate', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
-  if (!req.middleware.permissions.downloadPerm && !req.middleware.permissions.adminPerm) {
+  if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
   }
@@ -88,7 +93,7 @@ router.put('/authenticate', async (req: Request, res: Response) => {
 
 router.post('/package/byRegEx', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
   // TODO: Implement the logic to fetch the packages by regular expression from the database
-  if (!req.middleware.permissions.searchPerm && !req.middleware.permissions.adminPerm) {
+  if (!req.middleware.permissions.searchPerm) {
     res.status(403).send('Unauthorized - missing permissions');
     return;
   }
@@ -105,20 +110,58 @@ router.get('/tracks', (req: Request, res: Response) => {
   return;
 });
 
-router.delete('/deleteUser', (req: Request, res: Response) => {
-  // TODO: Implement the logic to delete the user
+router.post('/createUserGroup', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(403).send('Only admins can create user group.');
+    return;
+  }
+  return await createUserGroup(req, res);
 });
 
-router.post('/createUser', (req: Request, res: Response) => {
-  // TODO: Implement the logic to create the user
+router.post('/createUser', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(403).send('Only admins can create new user.');
+    return;
+  }
+  return await createUser(req, res);
 });
 
-router.get('/uploadHistory/:id', (req: Request, res: Response) => {
-  // TODO: Implement the logic to fetch the upload history by id
+router.delete('/deleteUser', async (req: Request, res: Response) => {
+  return await deleteUser(req, res);
 });
 
-router.get('/downloadHistory/:id', (req: Request, res: Response) => {
-  // TODO: Implement the logic to fetch the upload history by id
+router.get('/allUserGroups', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  console.log('in get all user groups');
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(403).send('Only admins can create new user.');
+    return;
+  }
+  try {
+    const userGroups = await UserService.getAllGroups();
+    res.status(200).json(userGroups);
+  } catch (error) {
+    console.error('Error fetching all user groups:', error);
+    res.status(500).send('Failed to fetch user groups.');
+  }
+  return;
+});
+
+// Gets upload history of a package (not a version)
+// param is name of the package
+router.get('/uploadHistory/:name', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(403).send('Only admins can check upload history.');
+    return;
+  }
+  return await getHistory(req, res, 'UPLOAD');
+});
+
+router.get('/downloadHistory/:name', authMiddleware, permMiddleware, async (req: Request, res: Response) => {
+  if (!req.middleware.permissions.adminPerm) {
+    res.status(403).send('Only admins can check download history.');
+    return;
+  }
+  return await getHistory(req, res, 'DOWNLOAD');
 });
 
 export default router;

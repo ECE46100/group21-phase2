@@ -15,7 +15,7 @@ declare module 'package-types' {
     version: string;
     packageID: number;
     author: string;
-    accessLevel: string;
+    accessLevel: string; // put '' if is not secret, otherwise put name of the userGroup
     JSProgram: string; // TODO: maybe should be located in the package table
     packageUrl: string; // TODO: maybe should be located in the package table
     readme?: string;

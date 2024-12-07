@@ -28,18 +28,21 @@ sequelize.sync({ force: true }).then(async () => {
     uploadPerm: true,
     userGroup: 'admin',
   });
-  await PackageService.createPackage({
-    name: "React",
-    contentUpload: true,
-  });
-  await PackageService.createVersion({
-    packageID: 1,
-    version: "1.2.3",
-    packageUrl: "https://reactjs.org/",
-    author: "Facebook",
-    accessLevel: "public",
-    JSProgram: '',
-  });
+
+  await UserService.createUserGroup('admin', 'default user group');
+  // await PackageService.createPackage({
+  //   name: "React",
+  //   contentUpload: true,
+  // });
+  // await PackageService.createVersion({
+  //   packageID: 1,
+  //   version: "1.2.3",
+  //   packageUrl: "https://reactjs.org/",
+  //   author: "Facebook",
+  //   accessLevel: "public",
+  //   JSProgram: '',
+  // });
+
   console.log('Database and tables created!');
 }).catch((err) => {
   console.log(err);

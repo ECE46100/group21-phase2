@@ -1,6 +1,1 @@
-[2024-12-07 10:06:04] INFO: PUT /authenticate 200
-[2024-12-07 10:06:32] INFO: body: , [object Object]
-[2024-12-07 10:06:33] INFO: POST /package 201
-[2024-12-07 10:06:41] INFO: POST /package/byRegEx 200
-[2024-12-07 10:07:20] INFO: POST /package/2 200
-[2024-12-07 10:07:25] INFO: POST /package/byRegEx 200
+

@@ -95,6 +95,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: contentRequest.JSProgram,
         }
       }
+      await PackageService.createHistory(req.middleware.username, versionID!, 'UPLOAD');
       res.status(201).send(response);
       return;
     } catch (err) {
@@ -129,6 +130,7 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageUrl: urlRequest.URL,
       });
       const versionID = await PackageService.getVersionID(packageID!, packageData.version);
+      await PackageService.createHistory(req.middleware.username, versionID!, 'UPLOAD');
       await writeZipFromTar(packageID!, versionID!, packageData.content);
       const zippedContents = await readPackageZip(packageID!, versionID!);
 
