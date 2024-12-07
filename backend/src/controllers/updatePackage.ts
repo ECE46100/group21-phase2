@@ -7,6 +7,7 @@ import { z } from 'zod';
 import semver from 'semver';
 import path from 'path';
 import { logger } from '../utils/logUtils';
+import { log } from 'winston';
 
 // Where to save the updated zip, the path field in version model
 const packageDir = path.join(__dirname, '..', '..', 'packages');
@@ -35,6 +36,7 @@ export default async function updatePackage(req: Request, res: Response) {
   logger.info(`body: , ${JSON.stringify(req.body)}`);
   const validationResult = ContentUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
+    logger.info('Request Failed Validation');
     res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
     return;
   }
@@ -42,6 +44,7 @@ export default async function updatePackage(req: Request, res: Response) {
   // Cannot use both content and url
   const { metadata, data } = validationResult.data;
   if (data.Content && data.URL) {
+    logger.info('Request Has both Content and URL');
     res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
     return;
   }
