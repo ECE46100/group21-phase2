@@ -64,6 +64,7 @@ export default async function searchPackages(req: Request, res: Response) {
     // Get the current user's group
     const username = req.middleware.username;
     const userGroup = await userService.getUserGroup(username);
+    
     const packageQueries = checkPackageQuery(req.body);
 
     const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset, userGroup);

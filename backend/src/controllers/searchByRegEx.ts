@@ -1,5 +1,7 @@
 import PackageService from "../services/packageService";
 import { Request, Response } from "express";
+import UserGroup from "src/models/userGroup";
+import userService from "../services/userService";
 import { z } from "zod";
 
 // Schema for validating the regex query
@@ -33,9 +35,12 @@ export default async function searchByRegex(req: Request, res: Response) {
     console.log(req.body);
     const { RegEx } = validateRegexQuery(req.body);
 
+    // Get the current user's group
+    const username = req.middleware.username;
+    const userGroup = await userService.getUserGroup(username);
 
     // Query the database using PackageService
-    const result = await PackageService.getPackagesByRegex(RegEx);
+    const result = await PackageService.getPackagesByRegex(RegEx, userGroup);
     console.log(result);
     if (result.length === 0) {
       res.status(404).send("No packages found");
