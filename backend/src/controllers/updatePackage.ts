@@ -63,7 +63,10 @@ export default async function updatePackage(req: Request, res: Response) {
   // Check if the package to update exists
   const packageName = metadata.Name;
   const packageID = await PackageService.getPackageID(packageName);
-
+  if (!packageID) {
+    res.status(404).send('Package does not exist.');
+    return;
+  }
   // Check if the package requires content upload
   const _package = await PackageService.getPackageByID(packageID);
   if (_package?.contentUpload && !data.Content) {
