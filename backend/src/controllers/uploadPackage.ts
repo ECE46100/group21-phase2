@@ -48,19 +48,20 @@ export default async function uploadPackage(req: Request, res: Response) {
       const packageID = await PackageService.getPackageID(name);
       try {
         await PackageService.createVersion({
-          version: contentRequest.Version,
+          version: '1.0.0',
           packageID: packageID!,
           author: req.middleware.username,
           accessLevel: 'public',
           JSProgram: contentRequest.JSProgram ?? '',
           packageUrl: '',
         });
-      } catch {
+      } catch (error) {
+        console.error('\n', error);
         res.status(409).send('Version already exists');
         return;
       }
 
-      const versionID = await PackageService.getVersionID(packageID!, contentRequest.Version);
+      const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
 
       // Write the package to the file system
       if (contentRequest.debloat) {
@@ -89,7 +90,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       const response = {
         metadata: {
           Name: name,
-          Version: contentRequest.Version,
+          Version: '1.0.0',
           ID: versionID!,
         },
         data: {
@@ -102,6 +103,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     } catch (err) {
       logger.error(err);
+      console.error('\n\n 1', err);
       res.status(500).send('Error creating package');
       return;
     }
@@ -160,6 +162,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     } catch (err) {
       logger.error(err);
+      console.error('\n\n  2', err);
       res.status(500).send('Error creating package');
       return;
     }
