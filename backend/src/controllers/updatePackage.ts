@@ -15,7 +15,7 @@ const packageDir = path.join(__dirname, '..', '..', 'packages');
 const MetadataSchema = z.object({
   Name: z.string(),
   Version: z.string(),
-  ID: z.string(),
+  ID: z.number(),
 });
 
 const DataSchema = z.object({
