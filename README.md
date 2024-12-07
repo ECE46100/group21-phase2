@@ -14,11 +14,11 @@ npm run progress
 ```
 3. To check best score:
 ```bash
-npx run best
+npm run best
 ```
 4. To check last run score:
 ```bash
-npx run last
+npm run last
 ```
 5. To run E2E test:
 ```bash
