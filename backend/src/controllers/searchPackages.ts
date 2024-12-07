@@ -5,8 +5,8 @@ import { logger } from "../utils/logUtils";
 import packageService from "../services/packageService";
 
 const PackageQuerySchema = z.object({
-  Name: z.string(),
-  Version: z.string().transform((version) => {
+  Name: z.string().default('*'),
+  Version: z.string().default('*').transform((version) => {
     if (version.includes("-")) {
       const [start, end] = version.split("-");
       return `${start.trim()} - ${end.trim()}`;
@@ -20,7 +20,6 @@ type ValidPackageQuery = z.infer<typeof PackageQuerySchema>;
 function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   // const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
   const validSemVerRegex = /^(?:\*|(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?)$/; // allow wildcard '*'(when no version is specified)
-
 
   if (!Array.isArray(query)) throw new Error("Invalid query");
 
@@ -45,7 +44,7 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 }
 
 export default async function searchPackages(req: Request, res: Response) {
-  logger.info(`body: , ${req.body}`);
+  logger.info(`body: , ${JSON.stringify(req.body)}`);
   const requestOffset = req.query ? req.query.offset : null;
   const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
   if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {

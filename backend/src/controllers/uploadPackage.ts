@@ -8,9 +8,10 @@ import { PackageJsonFields } from 'package-types';
 import { z } from 'zod';
 
 const ContentRequestSchema = z.object({
+  Version: z.string().default('1.0.0'),
   Content: z.string(),
   JSProgram: z.string().optional(),
-  debloat: z.boolean(),
+  debloat: z.boolean().default(false),
   Name: z.string(),
 });
 
@@ -24,7 +25,7 @@ type ValidURLRequest = z.infer<typeof URLRequestSchema>;
 
 export default async function uploadPackage(req: Request, res: Response) {
   // Check formatting of request body
-  logger.info(`body: , ${req.body}`);
+  logger.info(`body: , ${JSON.stringify(req.body)}`);
   if (ContentRequestSchema.safeParse(req.body).success) {
     const contentRequest = req.body as ValidContentRequest;
     // Check if the name exists in the database
@@ -47,7 +48,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       const packageID = await PackageService.getPackageID(name);
       try {
         await PackageService.createVersion({
-          version: '1.0.0',
+          version: contentRequest.Version,
           packageID: packageID!,
           author: req.middleware.username,
           accessLevel: 'public',
@@ -58,7 +59,8 @@ export default async function uploadPackage(req: Request, res: Response) {
         res.status(409).send('Version already exists');
         return;
       }
-      const versionID = await PackageService.getVersionID(packageID!, '1.0.0');
+
+      const versionID = await PackageService.getVersionID(packageID!, contentRequest.Version);
 
       // Write the package to the file system
       if (contentRequest.debloat) {
@@ -87,7 +89,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       const response = {
         metadata: {
           Name: name,
-          Version: '1.0.0',
+          Version: contentRequest.Version,
           ID: versionID!,
         },
         data: {

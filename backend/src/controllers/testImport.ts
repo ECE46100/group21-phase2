@@ -1,7 +1,9 @@
-import { ratePackage } from "../../bridge/phase1-bridge";
+import { getRating } from "../../bridge/phase1-bridge";
 
-ratePackage("https://www.npmjs.com/package/express").then((result) => {
+getRating("git+https://github.com/Gninoskcaj/easy-math-module.git").then((result) => {
   console.log(result);
+}).catch((err) => {
+  console.error(err);
 });
 
   

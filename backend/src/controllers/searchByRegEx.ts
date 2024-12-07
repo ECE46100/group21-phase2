@@ -37,7 +37,10 @@ export default async function searchByRegex(req: Request, res: Response) {
     // Query the database using PackageService
     const result = await PackageService.getPackagesByRegex(RegEx);
     console.log(result);
-
+    if (result.length === 0) {
+      res.status(404).send("No packages found");
+      return
+    }
     // Return the result as the response
     res.status(200).send(result);
   } catch (err) {

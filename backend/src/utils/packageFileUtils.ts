@@ -35,11 +35,11 @@ export async function unzipPackage(packageID: number, versionID: number): Promis
     }));
 
     const zip = new AdmZip(Buffer.from(await Body!.transformToByteArray()));
-    const directoryName = zip.getEntries().find(entry => entry.isDirectory)?.entryName;
+    const directoryName = zip.getEntries()[0].entryName.split('/')[0];
 
     zip.extractAllTo(unzippedPath, true);
 
-    return [unzippedPath, directoryName!];
+    return [unzippedPath, directoryName];
   } catch (err: unknown) {
     throw new Error(err as string);
   }
@@ -211,6 +211,7 @@ export async function debloatPackageZip(packageID: number, versionID: number, pa
 export async function getPackageJson(packageID: number, versionID: number): Promise<any> {
   try {
     const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
+    console.log(unzippedPath, directoryName);
     const packageJsonPath = path.join(path.join(unzippedPath, directoryName), 'package.json');
     const packageJson = fs.readFileSync(packageJsonPath, 'utf-8');
     fs.rmSync(unzippedPath, { recursive: true, force: true });

@@ -1,1 +1,1 @@
-export declare const ratePackage: (packageUrl: string) => Promise<string>;
+export declare const getRating: (packageUrl: string) => Promise<string>;

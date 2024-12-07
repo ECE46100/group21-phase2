@@ -1,4 +1,4 @@
-import winston from 'winston';
+import winston, { log } from 'winston';
 import { Request, Response, NextFunction } from 'express';
 
 const customFormat = winston.format.printf(({ level , message, timestamp }) => {
@@ -18,6 +18,7 @@ export const logger = winston.createLogger({
 });
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+  logger.info(`${req.method} ${req.path}`);
   res.on('finish', () => {
     logger.info(`${req.method} ${req.path} ${res.statusCode}`);
   });

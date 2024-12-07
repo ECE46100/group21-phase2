@@ -6,6 +6,8 @@ import { writePackageZip, writeZipFromTar, extractReadme } from '../utils/packag
 import { z } from 'zod';
 // import semver from 'semver';
 import path from 'path';
+import { logger } from '../utils/logUtils';
+import { log } from 'winston';
 
 // Where to save the updated zip, the path field in version model
 // const packageDir = path.join(__dirname, '..', '..', 'packages');
@@ -13,14 +15,14 @@ import path from 'path';
 const MetadataSchema = z.object({
   Name: z.string(),
   Version: z.string(),
-  ID: z.string(),
+  ID: z.number(),
 });
 
 const DataSchema = z.object({
   Name: z.string(),
   Content: z.string().optional(), // Optional for URL-based updates
   URL: z.string().optional(),
-  debloat: z.boolean(),
+  debloat: z.boolean().default(false),
   JSProgram: z.string().optional(),
 });
 
@@ -31,8 +33,25 @@ const ContentUpdateSchema = z.object({
 
 export default async function updatePackage(req: Request, res: Response) {
   // Validate the request body against the schema
+  const versionID = parseInt(req.params.id); // e.g., 123567192081501
+  if (isNaN(versionID)) {
+    res.status(404).send('Version does not exist.');
+    return;
+  }
+  const version = await PackageService.getPackageVersion(versionID);
+  if (!version) {
+    res.status(404).send('Version does not exist.');
+    return;
+  }
+  const existingName = await PackageService.getPackageName(version?.packageID);
+  if (!existingName) {
+    res.status(404).send('Package does not exist.');
+    return;
+  }
+  
   const validationResult = ContentUpdateSchema.safeParse(req.body);
   if (!validationResult.success) {
+    logger.info('Request Failed Validation');
     res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
     return;
   }
@@ -40,20 +59,18 @@ export default async function updatePackage(req: Request, res: Response) {
   // Cannot use both content and url
   const { metadata, data } = validationResult.data;
   if (data.Content && data.URL) {
+    logger.info('Request Has both Content and URL');
     res.status(400).send('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
     return;
   }
 
   // Check if the package to update exists
-  const versionID = parseInt(req.params.id); // e.g., 123567192081501
-  const version = await PackageService.getPackageVersion(versionID);
   const packageName = metadata.Name;
   const packageID = await PackageService.getPackageID(packageName);
-  if (!packageID || packageID!=version?.packageID) {
+  if (!packageID) {
     res.status(404).send('Package does not exist.');
     return;
   }
-
   // Check if the package requires content upload
   const _package = await PackageService.getPackageByID(packageID);
   if (_package?.contentUpload && !data.Content) {
