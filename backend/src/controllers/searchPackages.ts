@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "../utils/logUtils";
 import packageService from "../services/packageService";
+import userService from "../services/userService";
 
 const PackageQuerySchema = z.object({
   Name: z.string().default('*'),
@@ -60,9 +61,12 @@ export default async function searchPackages(req: Request, res: Response) {
     return;
   }
   try {
+    // Get the current user's group
+    const username = req.middleware.username;
+    const userGroup = await userService.getUserGroup(username);
     const packageQueries = checkPackageQuery(req.body);
 
-    const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset);
+    const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset, userGroup);
     // await PackageService.createHistory()
     res.header("offset", `${result[0]}-${result[1]}`);
     res.status(200).send(result[2]);

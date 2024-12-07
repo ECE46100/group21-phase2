@@ -80,7 +80,7 @@ process.exit(0)
 console.log('Failed')
 process.exit(1)
 }`,
-        accessLevel: isSecret ? groupName : '', // Set access level based on secret checkbox
+        accessLevel: isSecret ? groupName : 'public', // Set access level based on secret checkbox
       };
 
       if (file) {

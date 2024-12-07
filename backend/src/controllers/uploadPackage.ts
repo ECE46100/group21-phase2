@@ -13,11 +13,13 @@ const ContentRequestSchema = z.object({
   JSProgram: z.string().optional(),
   debloat: z.boolean().default(false),
   Name: z.string(),
+  accessLevel: z.string().default('public'),
 });
 
 const URLRequestSchema = z.object({
   JSProgram: z.string().optional(),
   URL: z.string(),
+  accessLevel: z.string().default('public'),
 });
 
 type ValidContentRequest = z.infer<typeof ContentRequestSchema>;
@@ -51,7 +53,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           version: '1.0.0',
           packageID: packageID!,
           author: req.middleware.username,
-          accessLevel: 'public',
+          accessLevel: contentRequest.accessLevel,
           JSProgram: contentRequest.JSProgram ?? '',
           packageUrl: '',
         });
@@ -129,7 +131,7 @@ export default async function uploadPackage(req: Request, res: Response) {
         version: packageData.version,
         packageID: packageID!,
         author: req.middleware.username,
-        accessLevel: 'public',
+        accessLevel: urlRequest.accessLevel,
         JSProgram: urlRequest.JSProgram ?? '',
         packageUrl: urlRequest.URL,
       });

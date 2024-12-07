@@ -43,7 +43,7 @@ class PackageService {
     return versionObj ? versionObj.ID : null;
   }
 
-  public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
+  public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number, userGroup: string): Promise<[number, number, PackageSearchResult[]]> {
     const queryMetadata = new Map<number, PackageQuery>();
     
     for (const query of packageQueries) {
@@ -59,7 +59,7 @@ class PackageService {
     const query: PackageQueryOptions = {
       offset: 50 * queryOffset,
       limit: 50,
-      order: [['createdAt', 'ASC']] as [string, string][]
+      order: [['createdAt', 'ASC']] as [string, string][],
     };
     
     if (packageQueries[0].Name !== "*") {
@@ -80,6 +80,14 @@ class PackageService {
       }
 
       for (const version of versions.rows) {
+        // Fetch the associated package for the current version
+        const packageObj = await Version.findByPk(version.packageID);
+
+        // Skip versions if accessLevel is secret and does not match the user's group
+        if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
+          continue; // Skip this version
+        }
+
         const semVer = packageQueries[0].Name !== "*" ? queryMetadata.get(version.packageID)?.Version : packageQueries[0].Version;
 
         if (semVer && satisfies(version.version, semVer)) {
