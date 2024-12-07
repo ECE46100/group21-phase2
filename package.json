@@ -2,8 +2,13 @@
   "name": "group21-phase2",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "schedule": "node autograder.js schedule",
+    "progress": "node autograder.js progress",
+    "best": "node autograder.js best",
+    "last": "node autograder.js last",
   },
   "author": "",
   "license": "ISC",
@@ -18,6 +23,8 @@
     "typescript-eslint": "^8.8.1"
   },
   "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
     "pg": "^8.13.1"
   }
 }
