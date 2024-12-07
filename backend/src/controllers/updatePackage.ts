@@ -4,11 +4,11 @@ import PackageService from '../services/packageService';
 import uploadUrlHandler from '../utils/packageURLUtils';
 import { writePackageZip, writeZipFromTar } from '../utils/packageFileUtils';
 import { z } from 'zod';
-import semver from 'semver';
+// import semver from 'semver';
 import path from 'path';
 
 // Where to save the updated zip, the path field in version model
-const packageDir = path.join(__dirname, '..', '..', 'packages');
+// const packageDir = path.join(__dirname, '..', '..', 'packages');
 
 const MetadataSchema = z.object({
   Name: z.string(),
@@ -117,6 +117,7 @@ export default async function updatePackage(req: Request, res: Response) {
         packageUrl: '',
       });
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
+      await PackageService.createHistory(req.middleware.username, createdVersionID!, 'UPLOAD');
       if (!createdVersionID) {
         res.status(500).send('Error creating version.');
         return;
@@ -140,6 +141,7 @@ export default async function updatePackage(req: Request, res: Response) {
       });
 
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
+      await PackageService.createHistory(req.middleware.username, createdVersionID!, 'UPLOAD');
       if (!createdVersionID) {
         res.status(500).send('Error creating version.');
         return;

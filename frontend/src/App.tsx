@@ -5,6 +5,8 @@ import UploadPage from './pages/upload';
 import UpdatePage from './pages/update';
 import RatingPage from './pages/rating';
 import DownloadPage from './pages/download';
+import ManageUsers from './pages/manageUsers';
+import HistoryPage from './pages/history';
 
 const App: React.FC = () => {
   return (
@@ -15,6 +17,8 @@ const App: React.FC = () => {
         <Route path="/update" element={<UpdatePage />} />
         <Route path="/rating" element={<RatingPage />} />
         <Route path="/download" element={<DownloadPage />} />
+        <Route path="/manageUsers" element={<ManageUsers />} />
+        <Route path="/history" element={<HistoryPage />} />
       </Routes>
     </Router>
   );

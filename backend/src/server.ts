@@ -28,6 +28,7 @@ sequelize.sync({ force: true }).then(async () => {
     uploadPerm: true,
     userGroup: 'admin',
   });
+  await UserService.createUserGroup('admin', 'default user group');
   // await PackageService.createPackage({
   //   name: "React",
   //   contentUpload: true,

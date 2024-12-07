@@ -3,9 +3,9 @@ import { Version } from '../models/version';
 import { PackageHistory } from '../models/packageHistory';
 import { PackageCreationAttributes, VersionCreationAttributes } from 'package-types';
 import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-types';
-import { HistoryResult } from 'package-history-types';
+import { HistoryResult, PackageAction } from 'package-history-types';
 import { satisfies } from 'semver';
-import { Op } from 'sequelize';
+import { Op, literal } from 'sequelize';
 
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
@@ -177,65 +177,78 @@ class PackageService {
     }
   }
 
-  public async createHistory(versionID: number, action:string): Promise<HistoryResult[]> {
+  public async createHistory(userName:string, versionID: number, action:string): Promise<undefined> {
+    console.log(`in createHistory, user:${userName}, versionID:${versionID}, action:${action}`);
     try {
-      const historyRecords = await PackageHistory.findAll({
-        where: {
-          [Op.and]: [
-            // Query the `PackageMetadata` JSON object for `ID`
-            { 'PackageMetadata.ID': versionID.toString() },
-            // Optionally filter by action
-            { Action: action },
-          ],
-        },
+      if (!['UPLOAD', 'SEARCH', 'DOWNLOAD', 'RATE'].includes(action)) {
+        throw new Error(`action ${action} is not one of UPLOAD | SEARCH | DOWNLOAD | RATE.`);
+      }
+      // get the version obj
+      const version = await Version.findOne({
+        where: { ID: versionID },
       });
+      if (!version) {
+        throw new Error(`Package with versionID ${versionID} not found.`);
+      }
+      // get the package obj (for its name)
+      const _package = await Package.findOne({
+        where: { ID: version.packageID },
+      })
+      if (!_package) {
+        throw new Error(`Package with ID ${version.packageID} not found.`);
+      }
 
-      // Transform the raw Sequelize data into the desired `HistoryResult` format
-      return historyRecords.map((record) => {
-        const data = record.toJSON();
-        return {
-          User: data.User, // HistoryUserEntry
-          Date: data.Date, // ISO format string
-        } as HistoryResult;
+      // Construct the package metadata object
+      const metadata: PackageSearchResult = {
+        Name: _package.name,
+        Version: version.version,
+        ID: version.ID.toString(),
+      };
+
+      // Create a new history entry
+      await PackageHistory.create({
+        User: userName, // User who performed the action
+        Date: new Date().toISOString(), // Current timestamp in ISO format
+        PackageMetadata: metadata, // Metadata of the package
+        Action: action as PackageAction, // The action performed
       });
+      console.log(`History entry created for action ${action} on package version ${versionID}`);
     } catch (err) {
-      console.error('Error fetching package history:', err);
-      throw new Error('Could not retrieve package history.');
+      console.error('Error creating package history:', err);
+      throw new Error('Failed to create package history entry.');
     }
   }
 
   /**
-   * gets history of a version
-   * @param versionID 
+   * Gets history of a package
+   * @param packageName 
    * @param action what was performed on this version
-   * @returns an array of {HistoryUserEntry, date}, indicating who(user) did what(action) at when(date)
-   * HistoryUserEntry : {
-   *   name : string,
-   *   isAdmin: boolean,
-   * }*/
-  public async getHistory(versionID: number, action:string): Promise<HistoryResult[]> {
+   * @returns an array of {userName, date, version}, indicating who(user) did what(action) at when(date)
+   */
+  public async getPackageHistory(packageName: string, action: string): Promise<HistoryResult[]> {
     try {
       const historyRecords = await PackageHistory.findAll({
         where: {
           [Op.and]: [
-            // Query the `PackageMetadata` JSON object for `ID`
-            { 'PackageMetadata.ID': versionID.toString() },
-            // Optionally filter by action
+            // Query `PackageMetadata` JSON for the package name
+            literal(`"PackageHistory"."PackageMetadata"->>'Name' = :packageName`),
             { Action: action },
           ],
         },
+        replacements: { packageName },
       });
 
-      // Transform the raw Sequelize data into the desired `HistoryResult` format
+      // Transform the results to include `Version` from `PackageMetadata`
       return historyRecords.map((record) => {
         const data = record.toJSON();
         return {
-          User: data.User, // HistoryUserEntry
-          Date: data.Date, // ISO format string
+          User: data.User,
+          Date: data.Date,
+          Version: data.PackageMetadata?.Version ?? 'Unknown', // Safely access the version
         } as HistoryResult;
       });
     } catch (err) {
-      console.error('Error fetching package history:', err);
+      console.error('Error fetching package history by package name:', err);
       throw new Error('Could not retrieve package history.');
     }
   }
