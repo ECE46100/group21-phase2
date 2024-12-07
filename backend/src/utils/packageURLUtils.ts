@@ -4,6 +4,11 @@ import { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import semver from "semver";
 import { PackageUrlObject, NPMResponse, GitHubResponse, GitHubPackageJson, PackageJsonFields } from "package-types";
+import fs from "fs";
+import path from "path";
+import { extract } from "tar";
+import os from "os";
+import { Readable } from "stream";
 dotenv.config();
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
@@ -154,3 +159,72 @@ async function downloadTarUrl(tarUrl: string, headers?: Record<string, string>):
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return response.data;
 }
+
+
+
+// /**
+//  * Extracts a README file's content from a tarball buffer.
+//  *
+//  * @param tarBuffer - The tarball buffer downloaded from the URL.
+//  * @returns The content of the README file if found, otherwise null.
+//  */
+// export async function extractReadmeFromTar(tarBuffer: Buffer): Promise<string | null> {
+//   // Create a temporary directory for extraction
+//   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "tarball-"));
+
+//   try {
+//     // Create a readable stream from the tarBuffer
+//     const tarStream = Readable.from(tarBuffer);
+
+//     // Extract tarball contents to the temporary directory
+//     await extract({
+//       cwd: tempDir,
+//       sync: false, // `sync` should not be used with async operations
+//     }).promise(tarStream);
+
+//     // Recursively find README file
+//     const readmePath = recursiveFindFile(tempDir, /^README(\.md|\.txt)?$/i);
+//     if (!readmePath) {
+//       console.warn("No README file found in the tarball.");
+//       return null;
+//     }
+
+//     // Read and return the README content
+//     return fs.readFileSync(readmePath, "utf-8");
+//   } catch (err) {
+//     console.error("Error extracting README from tarball:", err);
+//     return null;
+//   } finally {
+//     // Clean up the temporary directory
+//     fs.rmSync(tempDir, { recursive: true, force: true });
+//   }
+// }
+
+
+// /**
+//  * Recursively searches for a file matching the provided regex pattern in a directory.
+//  * 
+//  * @param dir - The directory to search in.
+//  * @param pattern - The regex pattern to match filenames.
+//  * @returns The full path to the first matching file, or null if no file is found.
+//  */
+// function recursiveFindFile(dir: string, pattern: RegExp): string | null {
+//   const files = fs.readdirSync(dir, { withFileTypes: true });
+
+//   for (const file of files) {
+//     const fullPath = path.join(dir, file.name);
+
+//     if (file.isDirectory()) {
+//       // Recursively search in subdirectories
+//       const result = recursiveFindFile(fullPath, pattern);
+//       if (result) {
+//         return result; // Return as soon as a match is found
+//       }
+//     } else if (file.isFile() && pattern.test(file.name)) {
+//       // Match found
+//       return fullPath;
+//     }
+//   }
+
+//   return null; // No match found
+// }

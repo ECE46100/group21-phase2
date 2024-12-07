@@ -122,8 +122,10 @@ class PackageService {
     const regexObj = new RegExp(regex, "i"); // Case-insensitive regex
   
     try {
-      // Query packages where the name matches the regex
+      const result: PackageSearchResult[] = [];
+      const seenIds = new Set<string>(); // Track unique IDs
 
+      // Search for packages by name
       const matchingPackages = await Package.findAll({
         where: {
           name: { [Op.regexp]: regexObj.source },
@@ -133,7 +135,6 @@ class PackageService {
 
   
       // Fetch versions for each package and map the result
-      const result: PackageSearchResult[] = [];
       for (const pkg of matchingPackages) {
         const versions = await this.getAllVersions(pkg.ID); // Fetch all versions for the package
   
@@ -145,14 +146,50 @@ class PackageService {
             Name: pkg.name,
             Version: version.version, // Include the version
           });
+          seenIds.add(version.ID.toString());
         }
       }
+
+    // Search for versions by readme
+    const matchingReadmes = await Version.findAll({
+      where: {
+        readme: { [Op.regexp]: regexObj.source },
+      },
+      order: [["createdAt", "ASC"]],
+    });
+
+    for (const version of matchingReadmes) {
+      const id = version.ID.toString();
+      if (!seenIds.has(id)) {
+        // Fetch the package name using the packageID from the version
+        const packageName = await Package.findOne({
+          where: { ID: version.packageID },
+          attributes: ["name"], // Only fetch the name to optimize query
+        });
+    
+        if (packageName) {
+          result.push({
+            ID: id,
+            Name: packageName.name, // Use the related package's name
+            Version: version.version, // Include the matched version
+          });
+          seenIds.add(id);
+        }
+      }
+    }
   
       return result;
     } catch (err) {
       console.error("Error in getPackagesByRegex:", err);
       throw new Error("Failed to retrieve packages");
     }
+  }
+
+  public async updateReadme(versionID: number, readmeContent: string) {
+    await Version.update(
+      { readme: readmeContent },
+      { where: { ID: versionID } }
+    );
   }
   
   public async createVersion(versionObj: VersionCreationAttributes): Promise<undefined> {

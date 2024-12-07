@@ -28,6 +28,7 @@ sequelize.sync({ force: true }).then(async () => {
     uploadPerm: true,
     userGroup: 'admin',
   });
+
   await UserService.createUserGroup('admin', 'default user group');
   // await PackageService.createPackage({
   //   name: "React",
@@ -41,6 +42,7 @@ sequelize.sync({ force: true }).then(async () => {
   //   accessLevel: "public",
   //   JSProgram: '',
   // });
+
   console.log('Database and tables created!');
 }).catch((err) => {
   console.log(err);
