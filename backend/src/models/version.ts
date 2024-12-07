@@ -11,6 +11,7 @@ export class Version extends Model<VersionAttributes, VersionCreationAttributes>
   public timestamp!: Date;
   public JSProgram!: string;
   public packageUrl!: string;
+  public readme?: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -45,6 +46,10 @@ Version.init({
   packageUrl: {
     type: new DataTypes.STRING(128),
     allowNull: true
+  },
+  readme: {
+    type: DataTypes.TEXT, // Use TEXT for large README content
+    allowNull: true,
   }
 }, {
   sequelize,

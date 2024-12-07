@@ -2,15 +2,15 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, extractReadme } from '../utils/packageFileUtils';
 import { z } from 'zod';
-import semver from 'semver';
+// import semver from 'semver';
 import path from 'path';
 import { logger } from '../utils/logUtils';
 import { log } from 'winston';
 
 // Where to save the updated zip, the path field in version model
-const packageDir = path.join(__dirname, '..', '..', 'packages');
+// const packageDir = path.join(__dirname, '..', '..', 'packages');
 
 const MetadataSchema = z.object({
   Name: z.string(),
@@ -134,6 +134,9 @@ export default async function updatePackage(req: Request, res: Response) {
         packageUrl: '',
       });
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
+
+      await PackageService.createHistory(req.middleware.username, createdVersionID!, 'UPLOAD');
+
       if (!createdVersionID) {
         res.status(500).send('Error creating version.');
         return;
@@ -141,6 +144,17 @@ export default async function updatePackage(req: Request, res: Response) {
 
       // Save content to file system
       await writePackageZip(packageID, createdVersionID, data.Content);
+
+
+      const readmeContent = await extractReadme(packageID!, createdVersionID!);
+
+      // Save README content to the database
+      if (readmeContent) {
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
+        await PackageService.updateReadme(createdVersionID!, readmeContent);
+      }
+
       res.status(200).send('Version is updated.');
     } else if (data.URL) {
       // Handle URL-based update
@@ -157,6 +171,7 @@ export default async function updatePackage(req: Request, res: Response) {
       });
 
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
+      await PackageService.createHistory(req.middleware.username, createdVersionID!, 'UPLOAD');
       if (!createdVersionID) {
         res.status(500).send('Error creating version.');
         return;
@@ -164,6 +179,16 @@ export default async function updatePackage(req: Request, res: Response) {
 
       // Save the package content from the URL
       await writeZipFromTar(packageID, createdVersionID, packageData.content);
+
+      const readmeContent = await extractReadme(packageID!, createdVersionID!);
+
+      // Save README content to the database
+      if (readmeContent) {
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
+        await PackageService.updateReadme(createdVersionID!, readmeContent);
+      }
+
       res.status(200).send('Version is updated.');
     } else {
       // Invalid request, neither content nor URL provided

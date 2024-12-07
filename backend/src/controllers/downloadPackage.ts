@@ -31,6 +31,8 @@ export default async function downloadPackage(req: Request, res: Response) {
         JSProgram: versionObj.JSProgram, 
       }
     });
+    console.log('tring to create history');
+    await PackageService.createHistory(req.middleware.username, ID, 'DOWNLOAD');
   } catch {
     res.status(500).send('Error reading package');
     return;

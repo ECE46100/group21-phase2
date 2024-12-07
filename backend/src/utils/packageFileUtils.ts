@@ -221,3 +221,78 @@ export async function getPackageJson(packageID: number, versionID: number): Prom
     throw new Error(err as string);
   }
 }
+
+
+/**
+ * Extracts the README file from an unzipped package directory.
+ * The README file can be in any of the following formats:
+ * - README.md
+ * - README.txt
+ * - README (no extension)
+ *
+ * @param packageID - The unique identifier for the package.
+ * @param versionID - The version identifier for the package.
+ * @returns The content of the README file as a string if found, otherwise null.
+ * @throws Error if the unzipped directory cannot be read or the README file cannot be accessed.
+ */
+export async function extractReadme(
+  packageID: number,
+  versionID: number
+): Promise<string | null> {
+  // Construct the unzipped path dynamically
+  const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
+  const targetPath = directoryName
+    ? path.join(unzippedPath, directoryName)
+    : unzippedPath;
+  try {
+    // Ensure the unzipped directory exists
+    if (!fs.existsSync(unzippedPath)) {
+      throw new Error(`Unzipped directory not found: ${unzippedPath}`);
+    }
+
+    // Read the directory contents
+    const files = fs.readdirSync(unzippedPath);
+
+    // Look for README files
+    const readmePath = recursiveFindFile(targetPath, /^README(\.md|\.txt)?$/i);
+    console.log(`Files in unzipped directory:`, files);
+    if (!readmePath) {
+      return null; // No README file found
+    }
+
+    // Read and return the content of the README file
+    return fs.readFileSync(readmePath, "utf-8");
+  } catch (err) {
+    throw new Error(
+      `Failed to extract README for package ${packageID}, version ${versionID}`
+    );
+  }
+}
+
+/**
+ * Recursively searches for a file matching the provided regex pattern in a directory.
+ *
+ * @param dir - The directory to search in.
+ * @param pattern - The regex pattern to match filenames.
+ * @returns The full path to the first matching file, or null if no file is found.
+ */
+function recursiveFindFile(dir: string, pattern: RegExp): string | null {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+
+    if (file.isDirectory()) {
+      // Recursively search in subdirectories
+      const result = recursiveFindFile(fullPath, pattern);
+      if (result) {
+        return result; // Return as soon as a match is found
+      }
+    } else if (file.isFile() && pattern.test(file.name)) {
+      // Match found
+      return fullPath;
+    }
+  }
+
+  return null; // No match found
+}

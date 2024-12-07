@@ -5,6 +5,7 @@ import resetBucket from "./utils/resetUtil";
 import UserService from "./services/userService";
 // import PackageService from "./services/packageService";
 import { requestLogger } from "./utils/logUtils";
+import PackageService from "./services/packageService";
 
 const app = express();
 
@@ -27,6 +28,8 @@ sequelize.sync({ force: true }).then(async () => {
     uploadPerm: true,
     userGroup: 'admin',
   });
+
+  await UserService.createUserGroup('admin', 'default user group');
   // await PackageService.createPackage({
   //   name: "React",
   //   contentUpload: true,
@@ -39,6 +42,7 @@ sequelize.sync({ force: true }).then(async () => {
   //   accessLevel: "public",
   //   JSProgram: '',
   // });
+
   console.log('Database and tables created!');
 }).catch((err) => {
   console.log(err);

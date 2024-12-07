@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler  from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip, getPackageJson } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip, getPackageJson, extractReadme } from '../utils/packageFileUtils';
 import { logger } from '../utils/logUtils';
 import { PackageJsonFields } from 'package-types';
 import { z } from 'zod';
@@ -45,7 +45,6 @@ export default async function uploadPackage(req: Request, res: Response) {
         res.status(409).send('Package already exists');
         return;
       }
-
       const packageID = await PackageService.getPackageID(name);
       try {
         await PackageService.createVersion({
@@ -69,7 +68,16 @@ export default async function uploadPackage(req: Request, res: Response) {
       } else {
         await writePackageZip(packageID!, versionID!, contentRequest.Content);
       }
-      console.log(packageID, versionID);
+
+      const readmeContent = await extractReadme(packageID!, versionID!);
+
+      // Save README content to the database
+      if (readmeContent) {
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
+        await PackageService.updateReadme(versionID!, readmeContent);
+      }
+      
       const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
       if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
         const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
@@ -89,6 +97,7 @@ export default async function uploadPackage(req: Request, res: Response) {
           JSProgram: contentRequest.JSProgram,
         }
       }
+      await PackageService.createHistory(req.middleware.username, versionID!, 'UPLOAD');
       res.status(201).send(response);
       return;
     } catch (err) {
@@ -123,8 +132,19 @@ export default async function uploadPackage(req: Request, res: Response) {
         packageUrl: urlRequest.URL,
       });
       const versionID = await PackageService.getVersionID(packageID!, packageData.version);
+      await PackageService.createHistory(req.middleware.username, versionID!, 'UPLOAD');
       await writeZipFromTar(packageID!, versionID!, packageData.content);
       const zippedContents = await readPackageZip(packageID!, versionID!);
+
+      const readmeContent = await extractReadme(packageID!, versionID!);
+
+      // Save README content to the database
+      if (readmeContent) {
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
+        await PackageService.updateReadme(versionID!, readmeContent);
+      }
+
       const response = {
         metadata: {
           Name: name,

@@ -7,7 +7,7 @@ export class PackageHistory extends Model<PackageHistoryAttributes, Omit<Package
   public User!: any; // Foreign key to the User model
   public Date!: string;
   public PackageMetadata!: any; // Foreign key to the PackageMetadata model
-  public Action!: 'CREATE' | 'UPDATE' | 'DOWNLOAD' | 'RATE';
+  public Action!: 'UPLOAD' | 'SEARCH' | 'DOWNLOAD' | 'RATE';
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -33,7 +33,7 @@ PackageHistory.init(
       allowNull: false,
     },
     Action: {
-      type: DataTypes.ENUM('CREATE', 'UPDATE', 'DOWNLOAD', 'RATE'),
+      type: DataTypes.ENUM('UPLOAD', 'SEARCH', 'DOWNLOAD', 'RATE'),
       allowNull: false,
     },
   },
