@@ -1,17 +1,6 @@
-[2024-12-07 09:29:24] INFO: PUT /authenticate 200
-[2024-12-07 09:30:02] INFO: body: , [object Object]
-[2024-12-07 09:30:03] INFO: POST /package 201
-[2024-12-07 09:30:34] INFO: POST /package/byRegEx 200
-[2024-12-07 09:30:41] INFO: POST /package/byRegEx 200
-[2024-12-07 09:30:46] INFO: POST /package/byRegEx 200
-[2024-12-07 09:30:51] INFO: POST /package/byRegEx 200
-[2024-12-07 09:37:01] INFO: body: , [object Object]
-[2024-12-07 09:37:02] ERROR: Error: ENOENT: no such file or directory, open 'C:\Users\Midas\Desktop\ECE 46100\group21-phase2\backend\dist\unzipped\3-3\test_readme\package.json'
-[2024-12-07 09:37:02] INFO: POST /package 500
-[2024-12-07 09:37:47] INFO: POST /package/byRegEx 200
-[2024-12-07 09:38:30] INFO: POST /package/1 200
-[2024-12-07 09:38:35] INFO: POST /package/byRegEx 200
-[2024-12-07 09:39:06] INFO: POST /package/byRegEx 200
-[2024-12-07 09:39:14] INFO: POST /package/byRegEx 200
-[2024-12-07 09:39:37] INFO: POST /package/byRegEx 200
-[2024-12-07 09:39:52] INFO: POST /package/byRegEx 200
+[2024-12-07 10:06:04] INFO: PUT /authenticate 200
+[2024-12-07 10:06:32] INFO: body: , [object Object]
+[2024-12-07 10:06:33] INFO: POST /package 201
+[2024-12-07 10:06:41] INFO: POST /package/byRegEx 200
+[2024-12-07 10:07:20] INFO: POST /package/2 200
+[2024-12-07 10:07:25] INFO: POST /package/byRegEx 200

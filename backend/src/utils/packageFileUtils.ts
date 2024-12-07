@@ -238,13 +238,11 @@ export async function extractReadme(
   packageID: number,
   versionID: number
 ): Promise<string | null> {
-  console.log(`-1`);
   // Construct the unzipped path dynamically
   const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
   const targetPath = directoryName
     ? path.join(unzippedPath, directoryName)
     : unzippedPath;
-
   try {
     // Ensure the unzipped directory exists
     if (!fs.existsSync(unzippedPath)) {
@@ -260,7 +258,7 @@ export async function extractReadme(
     if (!readmePath) {
       return null; // No README file found
     }
-    
+
     // Read and return the content of the README file
     return fs.readFileSync(readmePath, "utf-8");
   } catch (err) {

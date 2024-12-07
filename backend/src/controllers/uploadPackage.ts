@@ -71,10 +71,9 @@ export default async function uploadPackage(req: Request, res: Response) {
 
       // Save README content to the database
       if (readmeContent) {
-        console.log("README Content:");
-        console.log(readmeContent); // Print the README content
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
         await PackageService.updateReadme(versionID!, readmeContent);
-
       }
       
       const packageJson: PackageJsonFields = await getPackageJson(packageID!, versionID!) as PackageJsonFields;
@@ -137,10 +136,9 @@ export default async function uploadPackage(req: Request, res: Response) {
 
       // Save README content to the database
       if (readmeContent) {
-        console.log("README Content:");
-        console.log(readmeContent); // Print the README content
+        // console.log("README Content:");
+        // console.log(readmeContent); // Print the README content
         await PackageService.updateReadme(versionID!, readmeContent);
-
       }
 
       const response = {
