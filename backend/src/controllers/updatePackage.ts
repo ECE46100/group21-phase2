@@ -21,7 +21,7 @@ const DataSchema = z.object({
   Name: z.string(),
   Content: z.string().optional(), // Optional for URL-based updates
   URL: z.string().optional(),
-  debloat: z.boolean(),
+  debloat: z.boolean().default(false),
   JSProgram: z.string().optional(),
 });
 
