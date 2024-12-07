@@ -27,9 +27,6 @@ class PackageService {
   }
 
   public async getAllVersions(packageID: number): Promise<Version[]> {
-    if (typeof packageID !== 'number') {
-      return [];
-    }
     try {
       return await Version.findAll({ where: { packageID } });
     } catch (err) {
