@@ -1,98 +1,109 @@
-// import { Request, Response } from "express";
-// import searchByRegex from "../../src/controllers/searchByRegEx";
-// import PackageService from "../../src/services/packageService";
+import { Request, Response } from "express";
+import searchByRegex from "../../src/controllers/searchByRegEx";
+import PackageService from "../../src/services/packageService";
+import userService from "../../src/services/userService";
 
-// jest.mock("../../src/services/packageService");
+jest.mock("../../src/services/packageService");
+jest.mock("../../src/services/userService");
 
-// describe("searchByRegex Controller", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+describe("searchByRegex Controller", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//   beforeEach(() => {
-//     req = {
-//       body: {}, // Default empty body, will set for each test
-//     };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//     };
-//     jest.clearAllMocks(); // Clear mocks before each test
-//   });
+  beforeEach(() => {
+    req = {
+      body: {}, // Default empty body, will set for each test
+      middleware: {
+        username: 'testuser',
+        permissions: { uploadPerm: true, downloadPerm: true, searchPerm: true, adminPerm: false }, // Mock permissions
+      },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    jest.clearAllMocks(); // Clear mocks before each test
+  });
 
-//   it("should return packages when a valid regex query is provided", async () => {
-//     const regex = "test"; // Valid regex
-//     req.body = { RegEx: regex };
+  it("should return packages when a valid regex query is provided", async () => {
+    const regex = "test"; // Valid regex
+    req.body = { RegEx: regex };
 
-//     // Mocking the package service to return a result
-//     const mockPackages = [{ id: 1, name: "testPackage1" }, { id: 2, name: "testPackage2" }];
-//     (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue(mockPackages);
+    // Mocking userService and PackageService
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
 
-//     await searchByRegex(req as Request, res as Response);
+    const mockPackages = [
+      { id: 1, name: "testPackage1" },
+      { id: 2, name: "testPackage2" },
+    ];
+    (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue(mockPackages);
 
-//     expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex);
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.send).toHaveBeenCalledWith(mockPackages);
-//   });
+    await searchByRegex(req as Request, res as Response);
 
-//   it("should return 404 if no packages are found", async () => {
-//     const regex = "nonExistent"; // A regex that results in no matches
-//     req.body = { RegEx: regex };
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(mockPackages);
+  });
 
-//     // Mocking the package service to return an empty array
-//     (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue([]);
+  it("should return 404 if no packages are found", async () => {
+    const regex = "nonExistent";
+    req.body = { RegEx: regex };
 
-//     await searchByRegex(req as Request, res as Response);
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
+    (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue([]);
 
-//     expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex);
-//     expect(res.status).toHaveBeenCalledWith(404);
-//     expect(res.send).toHaveBeenCalledWith("No packages found");
-//   });
+    await searchByRegex(req as Request, res as Response);
 
-//   it("should return 400 if the regex is invalid", async () => {
-//     const invalidRegex = "["; // Invalid regex
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith("No packages found");
+  });
 
-//     req.body = { RegEx: invalidRegex };
+  it("should return 400 if the regex is invalid", async () => {
+    const invalidRegex = "["; // Invalid regex
 
-//     await searchByRegex(req as Request, res as Response);
+    req.body = { RegEx: invalidRegex };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+    await searchByRegex(req as Request, res as Response);
 
-//   it("should return 400 if the regex query is missing", async () => {
-//     req.body = {}; // Empty body, missing RegEx
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 
-//     await searchByRegex(req as Request, res as Response);
+  it("should return 400 if the regex query is missing", async () => {
+    req.body = {}; // Empty body, missing RegEx
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+    await searchByRegex(req as Request, res as Response);
 
-//   it("should return 400 if the regex query is an empty string", async () => {
-//     req.body = { RegEx: "" }; // Empty string as regex
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 
-//     await searchByRegex(req as Request, res as Response);
+  it("should return 400 if the regex query is an empty string", async () => {
+    req.body = { RegEx: "" }; // Empty string as regex
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+    await searchByRegex(req as Request, res as Response);
 
-//   it("should handle errors thrown by PackageService", async () => {
-//     const regex = "test"; // Valid regex
-//     req.body = { RegEx: regex };
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 
-//     // Mocking PackageService to throw an error
-//     (PackageService.getPackagesByRegex as jest.Mock).mockRejectedValue(new Error("Service error"));
+  it("should handle errors thrown by PackageService", async () => {
+    const regex = "test"; // Valid regex
+    req.body = { RegEx: regex };
 
-//     await searchByRegex(req as Request, res as Response);
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
-// });
+    // Mocking PackageService to throw an error
+    (PackageService.getPackagesByRegex as jest.Mock).mockRejectedValue(new Error("Service error"));
 
-describe('for ci to work', () => {
-  it('should pass', () => {
-      expect(true).toBe(true);
+    await searchByRegex(req as Request, res as Response);
+
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
   });
 });

@@ -129,13 +129,14 @@ describe("PackageService", () => {
   });
 
   describe("getPackagesBySemver", () => {
-    const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
-      Array.from({ length: count }, (_, i) => ({
-        ID: baseID + i,
-        packageID: 1,
-        version: `1.${minorVersion}.${i}`,
-        createdAt: new Date(),
-    }));
+const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
+    Array.from({ length: count }, (_, i) => ({
+      ID: baseID + i,
+      packageID: 1,
+      version: 1.${minorVersion}.${i},
+      createdAt: new Date(),
+      accessLevel: "public",
+  }));
 
     it("should handle less than 50 results total", async () => {
       const mockVersions = mockVersionRows(30, 0);
