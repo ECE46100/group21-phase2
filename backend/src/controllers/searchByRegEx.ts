@@ -1,6 +1,5 @@
 import PackageService from "../services/packageService";
 import { Request, Response } from "express";
-import UserGroup from "src/models/userGroup";
 import userService from "../services/userService";
 import { z } from "zod";
 
