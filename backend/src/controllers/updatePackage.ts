@@ -29,6 +29,7 @@ const ContentUpdateSchema = z.object({
 
 export default async function updatePackage(req: Request, res: Response) {
   // Validate the request body against the schema
+
   const versionID = parseInt(req.params.id); // e.g., 123567192081501
   if (isNaN(versionID)) {
     res.status(404).send('Version does not exist.');
@@ -108,13 +109,6 @@ export default async function updatePackage(req: Request, res: Response) {
         return;
       }
     }
-    // } else if (incomingPatch !== 0) {
-    //   // If no matching major/minor exists, ensure patch is zero for a new minor/major
-    //   res.status(400).send('Invalid version. Patch must start at 0 for new major or minor versions.');
-    //   return;
-    // }
-
-    // const programPath = path.join(packageDir, `${packageID}-${versionID}.zip`);
 
     // Process the update based on Content or URL
     if (data.Content) {
@@ -145,8 +139,6 @@ export default async function updatePackage(req: Request, res: Response) {
 
       // Save README content to the database
       if (readmeContent) {
-        // console.log("README Content:");
-        // console.log(readmeContent); // Print the README content
         await PackageService.updateReadme(createdVersionID, readmeContent);
       }
 
@@ -198,8 +190,6 @@ export default async function updatePackage(req: Request, res: Response) {
 
       // Save README content to the database
       if (readmeContent) {
-        // console.log("README Content:");
-        // console.log(readmeContent); // Print the README content
         await PackageService.updateReadme(createdVersionID, readmeContent);
       }
 
