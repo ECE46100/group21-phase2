@@ -4,10 +4,6 @@ dotenv.config();
 
 let { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, CI_ON } = process.env;
 
-console.log("AWS_ACCESS_KEY_ID: ", AWS_ACCESS_KEY_ID);
-console.log("AWS_SECRET_ACCESS_KEY: ", AWS_SECRET_ACCESS_KEY);
-console.log("AWS_REGION: ", AWS_REGION);
-
 if (CI_ON) {
   AWS_ACCESS_KEY_ID = "";
   AWS_SECRET_ACCESS_KEY = "";
