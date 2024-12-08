@@ -1,4 +1,4 @@
-import { S3Client, CreateBucketCommand } from "@aws-sdk/client-s3";
+import { S3Client } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -19,16 +19,6 @@ const s3Client = new S3Client({
     secretAccessKey: AWS_SECRET_ACCESS_KEY,
   },
 });
-
-// s3Client.send(
-//   new CreateBucketCommand({ 
-//     Bucket: "packages-group21" 
-//   })
-// ).then((data) => 
-//   console.log(data)
-// ).catch((error) =>
-//   console.error(error)
-// );
 
 export default s3Client;
 
