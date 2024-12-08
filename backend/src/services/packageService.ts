@@ -81,12 +81,8 @@ class PackageService {
       }
 
       for (const version of versions.rows) {
-        // Fetch the associated package for the current version
-        const packageObj = await Version.findByPk(version.ID);
-
         // Skip versions if accessLevel is secret and does not match the user's group
-        console.log(`packageObj: ${packageObj?.accessLevel}, userGroup: ${userGroup}`);
-        if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
+        if (version.accessLevel !== "public" && version.accessLevel !== userGroup) {
           continue; // Skip this version
         }
 

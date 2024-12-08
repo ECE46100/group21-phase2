@@ -2,15 +2,10 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar, extractReadme } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, extractReadme, getPackageJson } from '../utils/packageFileUtils';
 import { z } from 'zod';
-// import semver from 'semver';
-import path from 'path';
 import { logger } from '../utils/logUtils';
-import { log } from 'winston';
-
-// Where to save the updated zip, the path field in version model
-// const packageDir = path.join(__dirname, '..', '..', 'packages');
+import { PackageJsonFields } from 'package-types';
 
 const MetadataSchema = z.object({
   Name: z.string(),
@@ -73,7 +68,7 @@ export default async function updatePackage(req: Request, res: Response) {
   }
   // Check if the package requires content upload
   const _package = await PackageService.getPackageByID(packageID);
-  if (_package?.contentUpload && !data.Content) {
+  if (_package?.contentUpload && !data.Content || !_package?.contentUpload && !data.URL) {
     res.status(409).send('Package ingested via Content must be updated with Content.');
     return;
   } 
@@ -129,8 +124,7 @@ export default async function updatePackage(req: Request, res: Response) {
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',
-        // programPath: programPath,
-        JSProgram: '',
+        JSProgram: data.JSProgram ?? '',
         packageUrl: '',
       });
       const createdVersionID = await PackageService.getVersionID(packageID, metadata.Version);
@@ -146,13 +140,21 @@ export default async function updatePackage(req: Request, res: Response) {
       await writePackageZip(packageID, createdVersionID, data.Content);
 
 
-      const readmeContent = await extractReadme(packageID!, createdVersionID!);
+      const readmeContent = await extractReadme(packageID, createdVersionID);
 
       // Save README content to the database
       if (readmeContent) {
         // console.log("README Content:");
         // console.log(readmeContent); // Print the README content
-        await PackageService.updateReadme(createdVersionID!, readmeContent);
+        await PackageService.updateReadme(createdVersionID, readmeContent);
+      }
+
+      const packageJson: PackageJsonFields = await getPackageJson(packageID, versionID) as PackageJsonFields;
+      if (packageJson.repository && (typeof packageJson.repository === 'string' || typeof packageJson.repository.url === 'string')) {
+        const packageUrl: string = typeof packageJson.repository === 'string' ? packageJson.repository : packageJson.repository.url;
+        await PackageService.updatePackageUrl(versionID, packageUrl);
+      } else if (packageJson.homepage && typeof packageJson.homepage === 'string' && (packageJson.homepage.includes('github.com') || packageJson.homepage.includes('npmjs.com'))) {
+        await PackageService.updatePackageUrl(versionID, packageJson.homepage);
       }
 
       res.status(200).send('Version is updated.');
@@ -161,12 +163,11 @@ export default async function updatePackage(req: Request, res: Response) {
       console.log(`Processing URL-based update for ${metadata.Name}`);
       const packageData = await uploadUrlHandler(data.URL);
       await PackageService.createVersion({
-        version: metadata.Version || '1.0.0',
+        version: metadata.Version,
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',
-        // programPath: '', // No path for URL-based content
-        JSProgram: '',
+        JSProgram: data.JSProgram ?? '',
         packageUrl: data.URL,
       });
 
@@ -180,13 +181,13 @@ export default async function updatePackage(req: Request, res: Response) {
       // Save the package content from the URL
       await writeZipFromTar(packageID, createdVersionID, packageData.content);
 
-      const readmeContent = await extractReadme(packageID!, createdVersionID!);
+      const readmeContent = await extractReadme(packageID, createdVersionID);
 
       // Save README content to the database
       if (readmeContent) {
         // console.log("README Content:");
         // console.log(readmeContent); // Print the README content
-        await PackageService.updateReadme(createdVersionID!, readmeContent);
+        await PackageService.updateReadme(createdVersionID, readmeContent);
       }
 
       res.status(200).send('Version is updated.');
