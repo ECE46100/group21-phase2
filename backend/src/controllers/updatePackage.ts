@@ -5,7 +5,8 @@ import uploadUrlHandler from '../utils/packageURLUtils';
 import { writePackageZip, writeZipFromTar, extractReadme, getPackageJson } from '../utils/packageFileUtils';
 import { z } from 'zod';
 import { logger } from '../utils/logUtils';
-import { PackageJsonFields } from 'package-types';
+import { PackageJsonFields, PackageRating } from 'package-types';
+import { getRating } from '../../bridge/phase1-bridge';
 
 const MetadataSchema = z.object({
   Name: z.string(),
@@ -162,6 +163,18 @@ export default async function updatePackage(req: Request, res: Response) {
       // Handle URL-based update
       console.log(`Processing URL-based update for ${metadata.Name}`);
       const packageData = await uploadUrlHandler(data.URL);
+
+      try {
+        const rating = JSON.parse(await getRating(data.URL)) as PackageRating;
+        if (rating.NetScore < 0.5) {
+          res.status(424).send('URL is not rated highly enough');
+          return;
+        }
+      } catch {
+        res.status(424).send('URL is not rated highly enough');
+        return;
+      }
+      
       await PackageService.createVersion({
         version: metadata.Version,
         packageID: packageID,

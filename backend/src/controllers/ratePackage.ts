@@ -22,26 +22,8 @@ export default async function ratePackage(req: Request, res: Response) {
     // TODO : implement rating with versionID
     const packageUrl = versionObj.packageUrl;
     try{
-        // const result: PackageRating = JSON.parse(await getRating(packageUrl)) as PackageRating;
-        // console.log(result);
-        const result = {
-          BusFactor: 0,
-          BusFactorLatency: 0,
-          Correctness: 0,
-          CorrectnessLatency: 0,
-          RampUp: 0,
-          RampUpLatency: 0,
-          ResponsiveMaintainer: 0,
-          ResponsiveMaintainerLatency: 0,
-          LicenseScore: 0,
-          LicenseScoreLatency: 0,
-          GoodPinningPractice: 0,
-          GoodPinningPracticeLatency: 0,
-          PullRequest: 0,
-          PullRequestLatency: 0,
-          NetScore: 0,
-          NetScoreLatency: 0
-        }
+        const result: PackageRating = JSON.parse(await getRating(packageUrl)) as PackageRating;
+        console.log(result);
         res.status(200).send(result);
     } catch{
         res.status(500).send('The package rating system choked on at least one of the metrics.');

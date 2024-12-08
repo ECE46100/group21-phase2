@@ -4,8 +4,9 @@ import PackageService from '../services/packageService';
 import uploadUrlHandler  from '../utils/packageURLUtils';
 import { writePackageZip, writeZipFromTar, readPackageZip, debloatPackageZip, getPackageJson, extractReadme } from '../utils/packageFileUtils';
 import { logger } from '../utils/logUtils';
-import { PackageJsonFields } from 'package-types';
+import { PackageJsonFields, PackageRating } from 'package-types';
 import { z } from 'zod';
+import { getRating } from '../../bridge/phase1-bridge';
 
 const ContentRequestSchema = z.object({
   Version: z.string().default('1.0.0'),
@@ -22,14 +23,11 @@ const URLRequestSchema = z.object({
   accessLevel: z.string().default('public'),
 });
 
-type ValidContentRequest = z.infer<typeof ContentRequestSchema>;
-type ValidURLRequest = z.infer<typeof URLRequestSchema>;
-
 export default async function uploadPackage(req: Request, res: Response) {
   // Check formatting of request body
   logger.info(`body: , ${JSON.stringify(req.body)}`);
   if (ContentRequestSchema.safeParse(req.body).success) {
-    const contentRequest = req.body as ValidContentRequest;
+    const contentRequest = ContentRequestSchema.parse(req.body);
     // Check if the name exists in the database
     const name = contentRequest.Name;
     if (await PackageService.getPackageID(name)) {
@@ -76,8 +74,6 @@ export default async function uploadPackage(req: Request, res: Response) {
 
       // Save README content to the database
       if (readmeContent) {
-        // console.log("README Content:");
-        // console.log(readmeContent); // Print the README content
         await PackageService.updateReadme(versionID!, readmeContent);
       }
       
@@ -110,10 +106,8 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     }
   } else if (URLRequestSchema.safeParse(req.body).success) {
-
-    const urlRequest = req.body as ValidURLRequest;
+    const urlRequest = URLRequestSchema.parse(req.body);
     // TODO: Rate the package before proceeding
-    // TODO: Read the package.json to grab the version if it wasn't found already
     try {
       const packageData = await uploadUrlHandler(urlRequest.URL);
 
@@ -122,6 +116,18 @@ export default async function uploadPackage(req: Request, res: Response) {
         res.status(409).send('Package already exists');
         return;
       }
+      
+      try {
+        const rating = JSON.parse(await getRating(urlRequest.URL)) as PackageRating;
+        if (rating.NetScore < 0.5) {
+          res.status(424).send('URL is not rated highly enough');
+          return;
+        }
+      } catch {
+        res.status(424).send('URL is not rated highly enough');
+        return;
+      }
+
       await PackageService.createPackage({
         name: name,
         contentUpload: false,
