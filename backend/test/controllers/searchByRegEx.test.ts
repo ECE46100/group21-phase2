@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import searchByRegex from "../../src/controllers/searchByRegEx";
 import PackageService from "../../src/services/packageService";
+import userService from "../../src/services/userService";
 
 jest.mock("../../src/services/packageService");
+jest.mock("../../src/services/userService");
 
 describe("searchByRegex Controller", () => {
   let req: Partial<Request>;
@@ -11,6 +13,10 @@ describe("searchByRegex Controller", () => {
   beforeEach(() => {
     req = {
       body: {}, // Default empty body, will set for each test
+      middleware: {
+        username: 'testuser',
+        permissions: { uploadPerm: true, downloadPerm: true, searchPerm: true, adminPerm: false }, // Mock permissions
+      },
     };
     res = {
       status: jest.fn().mockReturnThis(),
@@ -23,27 +29,34 @@ describe("searchByRegex Controller", () => {
     const regex = "test"; // Valid regex
     req.body = { RegEx: regex };
 
-    // Mocking the package service to return a result
-    const mockPackages = [{ id: 1, name: "testPackage1" }, { id: 2, name: "testPackage2" }];
+    // Mocking userService and PackageService
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
+
+    const mockPackages = [
+      { id: 1, name: "testPackage1" },
+      { id: 2, name: "testPackage2" },
+    ];
     (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue(mockPackages);
 
     await searchByRegex(req as Request, res as Response);
 
-    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex);
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.send).toHaveBeenCalledWith(mockPackages);
   });
 
   it("should return 404 if no packages are found", async () => {
-    const regex = "nonExistent"; // A regex that results in no matches
+    const regex = "nonExistent";
     req.body = { RegEx: regex };
 
-    // Mocking the package service to return an empty array
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
     (PackageService.getPackagesByRegex as jest.Mock).mockResolvedValue([]);
 
     await searchByRegex(req as Request, res as Response);
 
-    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex);
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.send).toHaveBeenCalledWith("No packages found");
   });
@@ -81,18 +94,16 @@ describe("searchByRegex Controller", () => {
     const regex = "test"; // Valid regex
     req.body = { RegEx: regex };
 
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
+
     // Mocking PackageService to throw an error
     (PackageService.getPackagesByRegex as jest.Mock).mockRejectedValue(new Error("Service error"));
 
     await searchByRegex(req as Request, res as Response);
 
+    expect(PackageService.getPackagesByRegex).toHaveBeenCalledWith(regex, userGroup);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith("Invalid request");
   });
 });
-
-// describe('for ci to work', () => {
-//   it('should pass', () => {
-//       expect(true).toBe(true);
-//   });
-// });
