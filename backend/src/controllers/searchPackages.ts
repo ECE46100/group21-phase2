@@ -69,6 +69,8 @@ export default async function searchPackages(req: Request, res: Response) {
 
     const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset, userGroup);
     // await PackageService.createHistory()
+    logger.info(`offset: ${result[0]}-${result[1]}`);
+    logger.info(`result: ${JSON.stringify(result[2])}`);
     res.header("offset", `${result[0]}-${result[1]}`);
     res.status(200).send(result[2]);
   } catch {

@@ -3,11 +3,10 @@
 **/dist
 **/coverage
 **/.env
-**/logs
 /db
 /test-results
 /backend/packages
 /backend/unzipped
 /backend/conversion
 /backend/coverage
-backend/logs/app.log
+/backend/logs

@@ -1,3 +1,8 @@
+/**
+ * @file package.d.ts
+ * This file contains the types for the package database model, version database model, and other types related to packages.
+ */
+
 declare module 'package-types' {
   /* Package Database Model */
   export interface PackageAttributes {

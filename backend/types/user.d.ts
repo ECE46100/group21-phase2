@@ -1,3 +1,8 @@
+/**
+ * @file user.d.ts
+ * This file contains the types for the user feature.
+ */
+
 declare module 'user-types' {
   export interface UserPerms {
     uploadPerm: boolean;

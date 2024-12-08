@@ -6,7 +6,7 @@ import { z } from "zod";
 
 // Schema for validating the regex query
 const RegexQuerySchema = z.object({
-  RegEx: z.string().nonempty(), // Ensure the regex is a non-empty string
+  RegEx: z.string().min(1), // Ensure the regex is a non-empty string
 });
 
 type ValidRegexQuery = z.infer<typeof RegexQuerySchema>;
