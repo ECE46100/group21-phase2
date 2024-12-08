@@ -51,13 +51,8 @@ export default async function searchPackages(req: Request, res: Response) {
   //stupidly hardcoded way to account for negative offset
 
   let splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
-  if (splitOffset[0] == '') {
-    splitOffset[1] = '-' + splitOffset[1];
-  }
-  if (splitOffset[1] == '') {
-    splitOffset[2] = '-' + splitOffset[2];
-  }
   if (splitOffset.length > 2 && splitOffset[2] == '') {
+    splitOffset[1] = '-' + splitOffset[1];
     splitOffset[3] = '-' + splitOffset[3];
   }
   splitOffset = splitOffset.filter(item => item !== '');  //added for neg offset

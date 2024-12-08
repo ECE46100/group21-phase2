@@ -84,7 +84,7 @@ describe("searchPackages Controller", () => {
 
   it("should return empty response for negative offset", async () => {
     req.body = [{ Name: "testPackage", Version: "1.0.0" }];
-    req.query = { offset: "-1-0" };
+    req.query = { offset: "-1--1" };
 
     await searchPackages(req as Request, res as Response);
 
