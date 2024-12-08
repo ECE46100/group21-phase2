@@ -1,91 +1,108 @@
-// import { Request, Response } from "express";
-// import searchPackages from "../../src/controllers/searchPackages";
-// import PackageService from "../../src/services/packageService";
+import { Request, Response } from "express";
+import searchPackages from "../../src/controllers/searchPackages";
+import PackageService from "../../src/services/packageService";
+import userService from "../../src/services/userService";
+import { logger } from "../../src/utils/logUtils";
 
-// // Mocking external dependencies
-// jest.mock("../../src/services/packageService");
+jest.mock("../../src/services/packageService");
+jest.mock("../../src/services/userService");
+jest.mock("../../src/utils/logUtils");
 
-// describe("searchPackages Controller", () => {
-//   let req: Partial<Request>;
-//   let res: Partial<Response>;
+describe("searchPackages Controller", () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//   beforeEach(() => {
-//     req = {
-//       body: [
-//         {
-//           Name: "testPackage",
-//           Version: "1.0.0",
-//         },
-//       ],
-//       query: { offset: "0-0" }, // Explicitly defining query as an object with 'offset'
-//     };
-//     res = {
-//       status: jest.fn().mockReturnThis(),
-//       send: jest.fn(),
-//       header: jest.fn(),
-//     };
-//   });
+  beforeEach(() => {
+    req = {
+      body: [],
+      query: {},
+      middleware: {
+        username: "testuser",
+        permissions: { uploadPerm: true, downloadPerm: true, searchPerm: true, adminPerm: false },
+      },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+      header: jest.fn(),
+    };
+    jest.clearAllMocks();
+  });
+  
 
-//   it("should return packages when a valid query and offset are provided", async () => {
-//     // Mock valid response from PackageService
-//     const mockResult = [[1, 0], [0, 0], [{ Name: "testPackage", Version: "1.0.0" }]];
-//     (PackageService.getPackagesBySemver as jest.Mock).mockResolvedValue(mockResult);
+  it("should return packages when a valid query is provided", async () => {
+    req.body = [{ Name: "testPackage", Version: "1.0.0" }];
+    req.query = { offset: "0-0" };
 
-//     await searchPackages(req as Request, res as Response);
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
 
-//     expect(PackageService.getPackagesBySemver).toHaveBeenCalledWith(
-//       expect.arrayContaining([{ Name: "testPackage", Version: "1.0.0" }]),
-//       0,
-//       0
-//     );
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.header).toHaveBeenCalledWith("offset", "1-0");
-//     expect(res.send).toHaveBeenCalledWith([{ Name: "testPackage", Version: "1.0.0" }]);
-//   });
+    const mockResult = [0, 1, [{ id: 1, name: "testPackage", version: "1.0.0" }]];
+    (PackageService.getPackagesBySemver as jest.Mock).mockResolvedValue(mockResult);
 
-//   it("should return 400 if the offset query is invalid", async () => {
-//     // Invalid offset format
-//     if (req.query !== undefined) { req.query.offset = "invalidOffset"; }
+    await searchPackages(req as Request, res as Response);
 
-//     await searchPackages(req as Request, res as Response);
+    expect(PackageService.getPackagesBySemver).toHaveBeenCalledWith(
+      [{ Name: "testPackage", Version: "1.0.0" }],
+      0,
+      0,
+      userGroup
+    );
+    expect(res.header).toHaveBeenCalledWith("offset", "0-1");
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith(mockResult[2]);
+  });
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+  it("should return 400 for invalid query format", async () => {
+    req.body = { invalid: "query" }; // Invalid format
 
-//   it("should return 400 if the query is empty or invalid", async () => {
-//     // Empty query
-//     req.body = [];
+    await searchPackages(req as Request, res as Response);
 
-//     await searchPackages(req as Request, res as Response);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
+  
+  it("should return 400 for invalid offset", async () => {
+    req.body = [{ Name: "testPackage", Version: "1.0.0" }];
+    req.query = { offset: "invalid-offset" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+    await searchPackages(req as Request, res as Response);
 
-//   it("should return 400 if an invalid version is provided", async () => {
-//     // Invalid version format
-//     req.body = [{ Name: "testPackage", Version: "invalidVersion" }];
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 
-//     await searchPackages(req as Request, res as Response);
+  it("should return 400 if any package query is invalid", async () => {
+    req.body = [{ Name: "testPackage", Version: "invalidVersion" }];
+    req.query = { offset: "0-0" };
 
-//     expect(res.status).toHaveBeenCalledWith(400);
-//     expect(res.send).toHaveBeenCalledWith("Invalid request");
-//   });
+    await searchPackages(req as Request, res as Response);
 
-//   it("should return 404 if no packages match the query", async () => {
-//     // Mock an empty result (no packages found)
-//     (PackageService.getPackagesBySemver as jest.Mock).mockResolvedValue([[], [], []]);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 
-//     await searchPackages(req as Request, res as Response);
+  it("should return empty response for negative offset", async () => {
+    req.body = [{ Name: "testPackage", Version: "1.0.0" }];
+    req.query = { offset: "-1-0" };
 
-//     expect(res.status).toHaveBeenCalledWith(404);
-//     expect(res.send).toHaveBeenCalledWith("No packages found");
-//   });
-// });
+    await searchPackages(req as Request, res as Response);
 
-describe('for ci to work', () => {
-    it('should pass', () => {
-        expect(true).toBe(true);
-    });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.send).toHaveBeenCalledWith([]);
+  });
+
+  it("should handle errors thrown by PackageService", async () => {
+    req.body = [{ Name: "testPackage", Version: "1.0.0" }];
+    req.query = { offset: "0-0" };
+
+    const userGroup = "testGroup";
+    (userService.getUserGroup as jest.Mock).mockResolvedValue(userGroup);
+    (PackageService.getPackagesBySemver as jest.Mock).mockRejectedValue(new Error("Service error"));
+
+    await searchPackages(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.send).toHaveBeenCalledWith("Invalid request");
+  });
 });

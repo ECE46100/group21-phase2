@@ -133,8 +133,9 @@ describe("PackageService", () => {
       Array.from({ length: count }, (_, i) => ({
         ID: baseID + i,
         packageID: 1,
-        version: `1.${minorVersion}.${i}`,
+        version: 1.${minorVersion}.${i},
         createdAt: new Date(),
+        accessLevel: "public",
     }));
 
     it("should handle less than 50 results total", async () => {
