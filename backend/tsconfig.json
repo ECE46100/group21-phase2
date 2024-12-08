@@ -110,6 +110,5 @@
     "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
     "outDir": "./dist"
   },
-  // "include": ["src/**/*.ts", "jest.config.js", "babel.config.js", "eslint.config.js", "types/**/*.d.ts", "test/**/*.ts", "bridge/phase1-bridge.d.ts"],
-  "include": ["src/**/*.ts", "jest.config.js", "babel.config.js", "eslint.config.js", "types/**/*.d.ts", "test/**/*.ts",],
+  "include": ["src/**/*.ts", "jest.config.js", "babel.config.js", "eslint.config.js", "types/**/*.d.ts", "test/**/*.ts", "bridge/phase1-bridge.d.ts"],
 }

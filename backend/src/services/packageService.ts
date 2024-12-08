@@ -6,6 +6,7 @@ import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-
 import { HistoryResult, PackageAction } from 'package-history-types';
 import { satisfies } from 'semver';
 import { Op, literal } from 'sequelize';
+import RE2 from "re2";
 
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
@@ -127,7 +128,7 @@ class PackageService {
   }
 
   public async getPackagesByRegex(regex: string, userGroup: string): Promise<PackageSearchResult[]> {
-    const regexObj = new RegExp(regex, "i"); // Case-insensitive regex
+    const regexObj = new RE2(regex, "i"); // Case-insensitive regex
   
     try {
       const result: PackageSearchResult[] = [];
