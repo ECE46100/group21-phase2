@@ -125,7 +125,7 @@ export default async function updatePackage(req: Request, res: Response) {
       // Handle content-based update
       console.log(`Processing content-based update for ${metadata.Name}`);
       await PackageService.createVersion({
-        version: metadata.Version,
+        version: metadata.Version || '1.0.0',
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',
@@ -161,7 +161,7 @@ export default async function updatePackage(req: Request, res: Response) {
       console.log(`Processing URL-based update for ${metadata.Name}`);
       const packageData = await uploadUrlHandler(data.URL);
       await PackageService.createVersion({
-        version: metadata.Version,
+        version: metadata.Version || '1.0.0',
         packageID: packageID,
         author: req.middleware.username,
         accessLevel: 'public',

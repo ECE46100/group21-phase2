@@ -155,7 +155,8 @@ describe("PackageService", () => {
       const result = await PackageService.getPackagesBySemver(
         [{ Name: "testpackage", Version: "~1.0.0" }],
         0,
-        0
+        0,
+        "public"
       );
 
       expect(result[0]).toBe(-1);
@@ -177,7 +178,8 @@ describe("PackageService", () => {
       const result = await PackageService.getPackagesBySemver(
         [{ Name: "testpackage", Version: "~1.0.0" }],
         0,
-        0
+        0,
+        "public"
       );
 
       expect(result[0]).toBe(1);
@@ -208,7 +210,8 @@ describe("PackageService", () => {
       const result = await PackageService.getPackagesBySemver(
         [{ Name: "testpackage", Version: "~1.0.0" }],
         0,
-        0
+        0,
+        "public"
       );
 
       expect(result[0]).toBe(1);

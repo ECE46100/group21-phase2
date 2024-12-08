@@ -164,4 +164,18 @@ router.get('/downloadHistory/:name', authMiddleware, permMiddleware, async (req:
   return await getHistory(req, res, 'DOWNLOAD');
 });
 
+
+// Gets the group of upload user
+router.get('/user/group', authMiddleware, permMiddleware, async (req: Request, res: Response): Promise<void> => {
+  // Fetch the username from middleware (set during authentication)
+  const username = req.middleware.username;
+  if (!username) {
+    res.status(401).send('Unauthorized: Username is missing.');
+  }
+  // Fetch the user group using UserService
+  const userGroup = await UserService.getUserGroup(username);
+  // Return the user group as JSON
+  res.status(200).json({ groupName: userGroup });
+});
+
 export default router;
