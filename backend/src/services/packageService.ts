@@ -6,6 +6,7 @@ import { PackageSearchResult, PackageQuery, PackageQueryOptions } from 'package-
 import { HistoryResult, PackageAction } from 'package-history-types';
 import { satisfies } from 'semver';
 import { Op, literal } from 'sequelize';
+import RE2 from "re2";
 
 class PackageService {
   public async getPackageID(packageName: string): Promise<number | null> {
@@ -43,7 +44,7 @@ class PackageService {
     return versionObj ? versionObj.ID : null;
   }
 
-  public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number): Promise<[number, number, PackageSearchResult[]]> {
+  public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number, userGroup: string): Promise<[number, number, PackageSearchResult[]]> {
     const queryMetadata = new Map<number, PackageQuery>();
     
     for (const query of packageQueries) {
@@ -59,7 +60,7 @@ class PackageService {
     const query: PackageQueryOptions = {
       offset: 50 * queryOffset,
       limit: 50,
-      order: [['createdAt', 'ASC']] as [string, string][]
+      order: [['createdAt', 'ASC']] as [string, string][],
     };
     
     if (packageQueries[0].Name !== "*") {
@@ -80,6 +81,14 @@ class PackageService {
       }
 
       for (const version of versions.rows) {
+        // Fetch the associated package for the current version
+        const packageObj = await Version.findByPk(version.packageID);
+
+        // Skip versions if accessLevel is secret and does not match the user's group
+        if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
+          continue; // Skip this version
+        }
+
         const semVer = packageQueries[0].Name !== "*" ? queryMetadata.get(version.packageID)?.Version : packageQueries[0].Version;
 
         if (semVer && satisfies(version.version, semVer)) {
@@ -118,8 +127,8 @@ class PackageService {
     }
   }
 
-  public async getPackagesByRegex(regex: string): Promise<PackageSearchResult[]> {
-    const regexObj = new RegExp(regex, "i"); // Case-insensitive regex
+  public async getPackagesByRegex(regex: string, userGroup: string): Promise<PackageSearchResult[]> {
+    const regexObj = new RE2(regex, "i"); // Case-insensitive regex
   
     try {
       const result: PackageSearchResult[] = [];
@@ -140,6 +149,14 @@ class PackageService {
   
         // Map each version as a separate result
         for (const version of versions) {
+          // Fetch the associated package for the current version
+          const packageObj = await Version.findByPk(version.packageID);
+
+          // Skip versions if accessLevel is secret and does not match the user's group
+          if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
+            continue; // Skip this version
+          }
+
           result.push({
             // ID: pkg.ID.toString(),
             ID: version.ID.toString(), // should return versionID
@@ -159,6 +176,14 @@ class PackageService {
     });
 
     for (const version of matchingReadmes) {
+      // Fetch the associated package for the current version
+      const packageObj = await Version.findByPk(version.packageID);
+
+      // Skip versions if accessLevel is secret and does not match the user's group
+      if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
+        continue; // Skip this version
+      }
+
       const id = version.ID.toString();
       if (!seenIds.has(id)) {
         // Fetch the package name using the packageID from the version

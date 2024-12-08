@@ -13,11 +13,13 @@ const ContentRequestSchema = z.object({
   JSProgram: z.string().optional(),
   debloat: z.boolean().default(false),
   Name: z.string(),
+  accessLevel: z.string().default('public'),
 });
 
 const URLRequestSchema = z.object({
   JSProgram: z.string().optional(),
   URL: z.string(),
+  accessLevel: z.string().default('public'),
 });
 
 type ValidContentRequest = z.infer<typeof ContentRequestSchema>;
@@ -51,11 +53,12 @@ export default async function uploadPackage(req: Request, res: Response) {
           version: contentRequest.Version,
           packageID: packageID!,
           author: req.middleware.username,
-          accessLevel: 'public',
+          accessLevel: contentRequest.accessLevel,
           JSProgram: contentRequest.JSProgram ?? '',
           packageUrl: '',
         });
-      } catch {
+      } catch (error) {
+        console.error('\n', error);
         res.status(409).send('Version already exists');
         return;
       }
@@ -102,6 +105,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     } catch (err) {
       logger.error(err);
+      console.error('\n\n 1', err);
       res.status(500).send('Error creating package');
       return;
     }
@@ -127,7 +131,7 @@ export default async function uploadPackage(req: Request, res: Response) {
         version: packageData.version,
         packageID: packageID!,
         author: req.middleware.username,
-        accessLevel: 'public',
+        accessLevel: urlRequest.accessLevel,
         JSProgram: urlRequest.JSProgram ?? '',
         packageUrl: urlRequest.URL,
       });
@@ -160,6 +164,7 @@ export default async function uploadPackage(req: Request, res: Response) {
       return;
     } catch (err) {
       logger.error(err);
+      console.error('\n\n  2', err);
       res.status(500).send('Error creating package');
       return;
     }
