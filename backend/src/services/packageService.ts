@@ -85,6 +85,7 @@ class PackageService {
         const packageObj = await Version.findByPk(version.packageID);
 
         // Skip versions if accessLevel is secret and does not match the user's group
+        console.log(`packageObj: ${JSON.stringify(packageObj)}`);
         if (packageObj && packageObj.accessLevel !== "public" && packageObj.accessLevel !== userGroup) {
           continue; // Skip this version
         }
