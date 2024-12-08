@@ -81,6 +81,7 @@ class PackageService {
       }
 
       for (const version of versions.rows) {
+        console.log(version.accessLevel);
         // Skip versions if accessLevel is secret and does not match the user's group
         if (version.accessLevel !== "public" && version.accessLevel !== userGroup) {
           continue; // Skip this version
