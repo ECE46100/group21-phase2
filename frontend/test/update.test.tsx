@@ -1,53 +1,43 @@
 import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import UpdatePage from '../src/pages/update';
+import UpdatePage from '../src/pages/update'; // Adjust the path if necessary
 
 beforeEach(() => {
-  localStorage.clear();
   jest.resetAllMocks();
+  localStorage.clear();
   global.fetch = jest.fn();
+  localStorage.setItem('authToken', 'mockAuthToken123');
 });
-
-window.alert = jest.fn();
-const consoleSpy = jest.spyOn(console, 'log');
+jest.spyOn(window, 'alert').mockImplementation(() => {}); // Mock alert
 
 describe('UpdatePage Component', () => {
-  test('renders correctly and shows initial UI elements', () => {
+  test('renders the search form initially', () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
     render(
       <MemoryRouter>
         <UpdatePage />
       </MemoryRouter>
     );
 
-    // Check for initial input field and button
-    expect(screen.getByLabelText('Search for Package:')).toBeInTheDocument();
+    expect(screen.getByText('Update a Package')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search by Name or Regex:')).toBeInTheDocument();
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
 
-  test('alerts if authentication token is missing on mount', () => {
-    render(
-      <MemoryRouter>
-        <UpdatePage />
-      </MemoryRouter>
-    );
-    expect(consoleSpy).toHaveBeenCalledWith('no token set while entered update');
-    consoleSpy.mockRestore();
-  });
+  test('handles searching for packages successfully', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+      { ID: 2, Name: 'example-package-2', Version: '1.2.0' },
+    ];
 
-  test('performs search and displays results', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken');
-    
-    // Mock fetch response for search
     (fetch as jest.Mock).mockResolvedValueOnce({
       status: 200,
-      json: async () => ({
-        data: [
-          { ID: '1', Name: 'example-package', Version: '1.0.0' },
-          { ID: '2', Name: 'another-package', Version: '2.0.1' },
-        ],
-      }),
+      json: async () => mockPackages,
     });
 
     render(
@@ -56,77 +46,28 @@ describe('UpdatePage Component', () => {
       </MemoryRouter>
     );
 
-    // Enter a search term and submit the form
-    fireEvent.change(screen.getByLabelText('Search for Package:'), { target: { value: 'example' } });
-    fireEvent.click(screen.getByText('Search'));
-
-    // Wait for the packages to appear
-    await waitFor(() => {
-      expect(screen.getByText('example-package')).toBeInTheDocument();
-      expect(screen.getByText('another-package')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
     });
-  });
-
-  test('handles pagination: next and previous pages', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken');
-
-    // Mock fetch response for search with pagination
-    (fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        status: 200,
-        json: async () => ({
-          data: [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        json: async () => ({
-          data: [{ ID: '2', Name: 'another-package', Version: '2.0.1' }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        status: 200,
-        json: async () => ({
-          data: [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
-        }),
-      });
-
-    render(
-      <MemoryRouter>
-        <UpdatePage />
-      </MemoryRouter>
-    );
-
-    // Initial search
-    fireEvent.change(screen.getByLabelText('Search for Package:'), { target: { value: 'example' } });
     fireEvent.click(screen.getByText('Search'));
 
     await waitFor(() => {
-      expect(screen.getByText('example-package')).toBeInTheDocument();
-    });
-
-    // Go to next page
-    fireEvent.click(screen.getByText('Next Page'));
-    await waitFor(() => {
-      expect(screen.getByText('another-package')).toBeInTheDocument();
-    });
-
-    // Go back to previous page
-    fireEvent.click(screen.getByText('Previous Page'));
-    await waitFor(() => {
-      expect(screen.getByText('example-package')).toBeInTheDocument();
+      expect(screen.getByText('Search Results:')).toBeInTheDocument();
+      expect(screen.getByText('example-package-1')).toBeInTheDocument();
+      expect(screen.getByText('example-package-2')).toBeInTheDocument();
     });
   });
 
-  test('selects a package and displays the update form', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken');
+  test('handles selecting a package', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+    ];
 
-    // Mock fetch response for search
     (fetch as jest.Mock).mockResolvedValueOnce({
       status: 200,
-      json: async () => ({
-        data: [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
-      }),
+      json: async () => mockPackages,
     });
 
     render(
@@ -135,17 +76,172 @@ describe('UpdatePage Component', () => {
       </MemoryRouter>
     );
 
-    // Perform search and select a package
-    fireEvent.change(screen.getByLabelText('Search for Package:'), { target: { value: 'example' } });
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
+    });
     fireEvent.click(screen.getByText('Search'));
 
     await waitFor(() => {
-      screen.getByText('example-package');
+      fireEvent.click(screen.getByText('Select'));
     });
 
-    // Select package to display update form
-    fireEvent.click(screen.getByText('Select'));
-    expect(screen.getByText('Package Name (Pre-filled):')).toBeInTheDocument();
-    expect(screen.getByText('Current Version (Pre-filled):')).toBeInTheDocument();
+    expect(screen.getByLabelText('Package Name (Pre-filled):')).toHaveValue('example-package-1');
+    expect(screen.getByLabelText('Current Version (Pre-filled):')).toHaveValue('1.0.0');
+    expect(screen.getByLabelText('New Version:')).toBeInTheDocument();
+  });
+
+  test('handles providing a file for upload', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+    ];
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      json: async () => mockPackages,
+    });
+
+    render(
+      <MemoryRouter>
+        <UpdatePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
+    });
+    fireEvent.click(screen.getByText('Search'));
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Select'));
+    });
+
+    const file = new File(['dummy content'], 'example.zip', { type: 'application/zip' });
+    const fileInput = screen.getByLabelText('Upload New Version File:') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(fileInput.files![0]).toBe(file);
+    expect(fileInput.files!.length).toBe(1);
+  });
+
+  test('handles providing a URL for update', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+    ];
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      json: async () => mockPackages,
+    });
+
+    render(
+      <MemoryRouter>
+        <UpdatePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
+    });
+    fireEvent.click(screen.getByText('Search'));
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Select'));
+    });
+
+    const urlInput = screen.getByLabelText('Or Provide URL for the Update:');
+    fireEvent.change(urlInput, { target: { value: 'https://example.com/package.zip' } });
+
+    expect(urlInput).toHaveValue('https://example.com/package.zip');
+  });
+
+  test('handles updating a package successfully', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+    ];
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      json: async () => mockPackages,
+    });
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+    });
+
+    render(
+      <MemoryRouter>
+        <UpdatePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
+    });
+    fireEvent.click(screen.getByText('Search'));
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Select'));
+    });
+
+    fireEvent.change(screen.getByLabelText('New Version:'), { target: { value: '2.0.0' } });
+
+    const urlInput = screen.getByLabelText('Or Provide URL for the Update:');
+    fireEvent.change(urlInput, { target: { value: 'https://example.com/package.zip' } });
+
+    fireEvent.click(screen.getByText('Update Package'));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Version updated successfully!');
+    });
+  });
+
+  test('handles error when updating a package fails', async () => {
+    localStorage.setItem('authToken', 'mockAuthToken123');
+    localStorage.setItem('userName', 'testuser');
+    const mockPackages = [
+      { ID: 1, Name: 'example-package-1', Version: '1.0.0' },
+    ];
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 200,
+      json: async () => mockPackages,
+    });
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 400,
+      text: async () => 'Error message',
+    });
+
+    render(
+      <MemoryRouter>
+        <UpdatePage />
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText('Search by Name or Regex:'), {
+      target: { value: 'example-package' },
+    });
+    fireEvent.click(screen.getByText('Search'));
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText('Select'));
+    });
+
+    fireEvent.change(screen.getByLabelText('New Version:'), { target: { value: '2.0.0' } });
+
+    const urlInput = screen.getByLabelText('Or Provide URL for the Update:');
+    fireEvent.change(urlInput, { target: { value: 'https://example.com/package.zip' } });
+
+    fireEvent.click(screen.getByText('Update Package'));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Error updating package: Error message');
+    });
   });
 });

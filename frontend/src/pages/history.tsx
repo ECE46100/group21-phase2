@@ -118,12 +118,14 @@ const HistoryPage: React.FC = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache', // Prevent caching so we dont get 304 but 200
           'X-Authorization': authToken,
         },
       });
 
       if (response.ok) {
         const data: HistoryEntry[] = await response.json();
+        // console.log('Fetched history:', data); // delete this
         setHistory(data);
       } else {
         alert('Failed to fetch history. Please try again.');

@@ -25,8 +25,16 @@ jobs:
         working-directory: backend
         run: npm install
 
-      - name: Run Jest tests
+      - name: Run Jest tests (backend)
         working-directory: backend
         env:
           CI_ON: true
         run: npm run test:ci
+
+      - name: Install dependencies (frontend)
+        working-directory: frontend
+        run: npm install
+
+      - name: Run Jest tests (frontend)
+        working-directory: frontend
+        run: npx jest --ci

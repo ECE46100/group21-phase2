@@ -4,21 +4,20 @@ import { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import semver from "semver";
 import { PackageUrlObject, NPMResponse, GitHubResponse, GitHubPackageJson, PackageJsonFields } from "package-types";
-import fs from "fs";
-import path from "path";
-import { extract } from "tar";
-import os from "os";
-import { Readable } from "stream";
 dotenv.config();
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-if (!GITHUB_TOKEN) {
+const { GITHUB_TOKEN, CI_ON} = process.env;
+if (!CI_ON && !GITHUB_TOKEN) {
   throw new Error('Missing GitHub Token');
 }
 
+/**
+ * Entry point for handling package URLs
+ * @param packageUrl : string
+ * @returns package name, version, and tarball content
+ */
 export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
-
   if (parsedUrl.hostname.includes('github.com')) {
     return await handleGitHubUrl(parsedUrl);
   } else if (parsedUrl.hostname.includes('npmjs.com')) {
@@ -28,6 +27,11 @@ export default async function uploadUrlHandler(packageUrl: string): Promise<Pack
   }
 }
 
+/**
+ * Handle NPM URL
+ * @param parsedUrl : URL
+ * @returns package name, version, and tarball content
+ */
 async function handleNpmUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   const pathParts = parsedUrl.pathname.split('/').slice(1);
   let name = '';
@@ -68,6 +72,11 @@ async function handleNpmUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   }
 }
 
+/**
+ * Handle GitHub URL
+ * @param parsedUrl : URL
+ * @returns package name, version, and tarball content
+ */
 async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   const pathParts = parsedUrl.pathname.split('/').slice(1);
   let tag = null;
@@ -124,6 +133,12 @@ async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   }
 }
 
+/**
+ * get latest tag for a gitub repo
+ * @param owner : string
+ * @param repo : string
+ * @returns the name of the latest tag, if found
+ */
 async function getLatestTag(owner: string, repo: string): Promise<string | null> {
   const GITHUB_API_URL = `https://api.github.com/repos/${owner}/${repo}/tags`;
 
@@ -140,13 +155,18 @@ async function getLatestTag(owner: string, repo: string): Promise<string | null>
     if (response.data.length === 0) {
       return null;
     }
-
     return response.data[0].name;
   } catch (err: unknown) {
     throw new Error((err as Error).message);
   }
 }
 
+/**
+ * Gets the content of the tarball from a URL
+ * @param tarUrl : string
+ * @param headers : Record<string, string> (needed for github)
+ * @returns the tar contents in a buffer
+ */
 async function downloadTarUrl(tarUrl: string, headers?: Record<string, string>): Promise<Buffer> {
   const response = await axios.get(tarUrl, { 
     responseType: 'arraybuffer',

@@ -7,6 +7,12 @@ const userGroupCreationSchema = z.object({
     description: z.string().optional(),
   });
 
+/**
+ * Function to create a new user group
+ * @param req : Request
+ * @param res : Response
+ * @returns 200 if the user group was created
+ */
 export default async function createUserGroup(req: Request, res: Response) {
     const validationResult = userGroupCreationSchema.safeParse(req.body);
     if (!validationResult.success || validationResult.data.name=='') {

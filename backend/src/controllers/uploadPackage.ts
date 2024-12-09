@@ -23,6 +23,12 @@ const URLRequestSchema = z.object({
   accessLevel: z.string().default('public'),
 });
 
+/**
+ * Function to upload a package
+ * @param req : Request
+ * @param res : Response
+ * @returns : 201 if the package was uploaded
+ */
 export default async function uploadPackage(req: Request, res: Response) {
   // Check formatting of request body
   logger.info(`body: , ${JSON.stringify(req.body)}`);

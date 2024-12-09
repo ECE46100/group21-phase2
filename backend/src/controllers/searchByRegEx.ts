@@ -28,6 +28,12 @@ function validateRegexQuery(query: unknown): ValidRegexQuery {
   return validatedQuery.data;
 }
 
+/**
+ * Function to search for packages by regex
+ * @param req : Request
+ * @param res : Response
+ * @returns : 200 if the packages were found
+ */
 export default async function searchByRegex(req: Request, res: Response) {
   try {
     // Validate the regex query from the request body

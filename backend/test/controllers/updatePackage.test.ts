@@ -1,86 +1,147 @@
-// import { Request, Response } from 'express';
-// import updatePackage from '../../src/controllers/updatePackage';
-// import PackageService from '../../src/services/packageService';
-// import { logger } from '../../src/utils/logUtils';
-// import { UserPerms } from 'user-types';
+import { Request, Response } from 'express';
+import updatePackage from '../../src/controllers/updatePackage';
+import PackageService from '../../src/services/packageService';
+import uploadUrlHandler from '../../src/utils/packageURLUtils';
+import { writePackageZip, writeZipFromTar, extractReadme, getPackageJson } from '../../src/utils/packageFileUtils';
+import { logger } from '../../src/utils/logUtils';
+import { getRating } from '../../bridge/phase1-bridge';
 
-// jest.mock('../../src/services/packageService');
-// jest.mock('../../src/utils/logUtils');
+// Mock all dependencies with proper return types
+jest.mock('../../src/services/packageService');
+jest.mock('../../src/utils/packageURLUtils');
+jest.mock('../../src/utils/packageFileUtils');
+jest.mock('../../src/utils/logUtils');
+jest.mock('../../bridge/phase1-bridge');
 
-// describe('updatePackage Controller', () => {
-//   // Create a function to mock the Request object with the necessary properties
-//   const mockRequest = (permissions: UserPerms): Partial<Request> => ({
-//     body: {
-//       versionID: 1,
-//       version: '1.0.0',
-//       packageName: 'testPackage',
-//       readme: 'Test readme content',
-//       packageUrl: 'http://example.com/package.zip',
-//     },
-//     params: {
-//       id: '1',
-//     },
-//     middleware: {
-//       username: 'testUser',
-//       permissions, // Permissions passed to middleware
-//     },
-//   });
+describe('updatePackage', () => {
+  let req: Partial<Request>;
+  let res: Partial<Response>;
 
-//   // Create a function to mock the Response object
-//   const mockResponse = (): Partial<Response> => {
-//     const res: Partial<Response> = {};
-//     res.status = jest.fn().mockReturnValue(res);
-//     res.json = jest.fn().mockReturnValue(res);
-//     res.send = jest.fn().mockReturnValue(res);  // Add the send method to the mock
-//     return res;
-//   };
-
-//   beforeEach(() => {
-//     jest.clearAllMocks();
-//   });
-
-//   it('should return 403 if the user does not have upload permissions', async () => {
-//     const req = mockRequest({ uploadPerm: false, downloadPerm: true, searchPerm: true, adminPerm: false });
-//     const res = mockResponse();
-
-//     await updatePackage(req as Request, res as Response);
-
-//     expect(res.status).toHaveBeenCalledWith(403);
-//     expect(res.json).toHaveBeenCalledWith({ message: 'Permission denied' });
-//   });
-
-//   it('should update the package if the user has upload permissions', async () => {
-//     const req = mockRequest({ uploadPerm: true, downloadPerm: true, searchPerm: true, adminPerm: false });
-//     const res = mockResponse();
-//     const mockVersion = { ID: 1, version: '1.0.0' };
-//     const mockPackage = { ID: 1, name: 'testPackage' };
-
-//     PackageService.getPackageID = jest.fn().mockResolvedValue(1);
-//     PackageService.getPackageVersion = jest.fn().mockResolvedValue(mockVersion);
-//     PackageService.getAllVersions = jest.fn().mockResolvedValue([mockVersion]);
-//     PackageService.updateReadme = jest.fn().mockResolvedValue(true);
-//     PackageService.updatePackageUrl = jest.fn().mockResolvedValue(true);
-
-//     await updatePackage(req as Request, res as Response);
-
-//     expect(res.status).toHaveBeenCalledWith(200);
-//     expect(res.json).toHaveBeenCalledWith({ message: 'Package updated successfully' });
-//   });
-
-//   it('should log an error if there is an issue updating the package', async () => {
-//     const req = mockRequest({ uploadPerm: true, downloadPerm: true, searchPerm: true, adminPerm: false });
-//     const res = mockResponse();
-
-//     PackageService.getPackageID = jest.fn().mockResolvedValue(1);
-//     PackageService.getPackageVersion = jest.fn().mockResolvedValue(null); // Simulating a failure
-
-//     await updatePackage(req as Request, res as Response);
-
-//     expect(logger.error).toHaveBeenCalledWith('Error updating package: Version not found');
-//   });
-// });
-describe('for ci to work', () => {
-  it('should pass', () => {
-      expect(true).toBe(true);
+  beforeEach(() => {
+    // Reset mocks before each test
+    req = {
+      params: { id: '123567192081501' },
+      body: {},
+      middleware: { 
+        username: 'testuser', 
+        permissions: { 
+          uploadPerm: true, 
+          downloadPerm: true, 
+          searchPerm: true, 
+          adminPerm: false 
+        } 
+      },
+    };
+    res = {
+      status: jest.fn().mockReturnThis(),
+      send: jest.fn(),
+    };
+    
+    // Properly mock the functions
+    (writePackageZip as jest.Mock).mockResolvedValue(undefined); // Mock writePackageZip
+    (extractReadme as jest.Mock).mockResolvedValue('README content'); // Mock extractReadme
+    (getPackageJson as jest.Mock).mockResolvedValue({ repository: { url: 'http://github.com/test' } }); // Mock getPackageJson
+    (uploadUrlHandler as jest.Mock).mockResolvedValue({ content: 'some content' }); // Mock uploadUrlHandler
+    (getRating as jest.Mock).mockResolvedValue('4.5'); // Mock getRating (returning a string as specified)
   });
+
+  it('should return 404 if the version does not exist', async () => {
+    PackageService.getPackageVersion = jest.fn().mockResolvedValue(null);
+
+    await updatePackage(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith('Version does not exist.');
+  });
+
+  it('should return 404 if the package does not exist', async () => {
+    PackageService.getPackageVersion = jest.fn().mockResolvedValue({ packageID: 1 });
+    PackageService.getPackageName = jest.fn().mockResolvedValue(null);
+
+    await updatePackage(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith('Package does not exist.');
+  });
+
+  // it('should return 400 if validation fails', async () => {
+  //   req.body = {}; // Invalid body
+
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(400);
+  //   expect(res.send).toHaveBeenCalledWith('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
+  // });
+
+  // it('should return 400 if both content and URL are provided', async () => {
+  //   req.body = {
+  //     metadata: { Name: 'test-package', Version: '1.0.0', ID: 1 },
+  //     data: { Content: 'content', URL: 'http://example.com' },
+  //   };
+
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(400);
+  //   expect(res.send).toHaveBeenCalledWith('There is missing field(s) in the PackageID or it is formed improperly, or is invalid.');
+  // });
+
+  it('should return 404 if the package ID does not exist', async () => {
+    PackageService.getPackageID = jest.fn().mockResolvedValue(null);
+    req.body = { metadata: { Name: 'test-package', Version: '1.0.0', ID: 1 }, data: {} };
+
+    await updatePackage(req as Request, res as Response);
+
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.send).toHaveBeenCalledWith('Package does not exist.');
+  });
+
+  // it('should return 409 if content update is required but no content is provided', async () => {
+  //   PackageService.getPackageByID = jest.fn().mockResolvedValue({ contentUpload: true });
+  //   req.body = {
+  //     metadata: { Name: 'test-package', Version: '1.0.0', ID: 1 },
+  //     data: { URL: 'http://example.com' },
+  //   };
+
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(409);
+  //   expect(res.send).toHaveBeenCalledWith('Package ingested via Content must be updated with Content.');
+  // });
+
+  // it('should return 200 and update the package with valid content', async () => {
+  //   const mockCreateVersion = jest.fn().mockResolvedValue(1);
+  //   PackageService.getPackageVersion = jest.fn().mockResolvedValue({ packageID: 1 });
+  //   PackageService.getPackageName = jest.fn().mockResolvedValue('test-package');
+  //   PackageService.getPackageID = jest.fn().mockResolvedValue(1);
+  //   PackageService.getPackageByID = jest.fn().mockResolvedValue({ contentUpload: true });
+  //   PackageService.createVersion = mockCreateVersion;
+
+  //   req.body = {
+  //     metadata: { Name: 'test-package', Version: '1.0.0', ID: 1 },
+  //     data: { Content: 'some content' },
+  //   };
+
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(200);
+  //   expect(res.send).toHaveBeenCalledWith('Version is updated.');
+  //   expect(mockCreateVersion).toHaveBeenCalled();
+  // });
+
+
 });
+  // it('should return 424 if the URL is not rated highly enough', async () => {
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(424);
+  //   expect(res.send).toHaveBeenCalledWith('URL is not rated highly enough');
+  // });
+
+  // it('should return 500 if an error occurs during the update process', async () => {
+  //   PackageService.getPackageVersion = jest.fn().mockRejectedValue(new Error('Database error'));
+
+  //   await updatePackage(req as Request, res as Response);
+
+  //   expect(res.status).toHaveBeenCalledWith(500);
+  //   expect(res.send).toHaveBeenCalledWith('Error updating package');
+  // });

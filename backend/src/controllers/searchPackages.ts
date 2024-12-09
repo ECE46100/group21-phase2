@@ -2,7 +2,6 @@ import PackageService from "../services/packageService";
 import { Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "../utils/logUtils";
-import packageService from "../services/packageService";
 import userService from "../services/userService";
 
 const PackageQuerySchema = z.object({
@@ -18,6 +17,11 @@ const PackageQuerySchema = z.object({
 
 type ValidPackageQuery = z.infer<typeof PackageQuerySchema>;
 
+/**
+ * Function to validate the package query
+ * @param query : unknown
+ * @returns : ValidPackageQuery[]
+ */
 function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   // const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
   const validSemVerRegex = /^(?:\*|(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?)$/; // allow wildcard '*'(when no version is specified)
@@ -44,11 +48,27 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   return validatedPackageQuery;
 }
 
+/**
+ * Function to search for packages
+ * @param req : Request
+ * @param res : Response
+ * @returns : 200 if the packages were found
+ */
 export default async function searchPackages(req: Request, res: Response) {
   logger.info(`body: , ${JSON.stringify(req.body)}`);
   const requestOffset = req.query ? req.query.offset : null;
-  const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
-  if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {
+
+  //stupidly hardcoded way to account for negative offset
+
+  let splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
+  if (splitOffset.length > 2 && splitOffset[2] == '') {
+    splitOffset[1] = '-' + splitOffset[1];
+    splitOffset[3] = '-' + splitOffset[3];
+  }
+  splitOffset = splitOffset.filter(item => item !== '');  //added for neg offset
+  const offsetNum = (Number(splitOffset[0]));
+
+  if (!(!isNaN(offsetNum) && splitOffset[0].trim() !== '') || splitOffset.length > 2 || splitOffset.length === 0) {
     res.status(400).send("Invalid request");
     return;
   }

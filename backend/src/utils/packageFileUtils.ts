@@ -1,13 +1,8 @@
-// TODO: Move to S3 file creation and retrieval system
-// Normal fs only for local development
-// Input stream to read/write must arleady be decoded
-
-// Zip files stored as packageID-versionID
 import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import { extract } from 'tar';
-import { execSync } from 'child_process';
+import esbuild from 'esbuild';
 import s3Client from '../S3';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
@@ -137,51 +132,45 @@ export async function writeZipFromTar(packageID: number, versionID: number, tarF
  * @param packageZip: string
  */
 export async function debloatPackageZip(packageID: number, versionID: number, packageZip: string): Promise<undefined> {
-  // try {
-  //   await writePackageZip(packageID, versionID, packageZip);
-  //   const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
-  //   const depcheckOutput = execSync(`npx depcheck ${path.join(unzippedPath, directoryName)} --json`, { encoding: 'utf-8' });
+  try {
+    await writePackageZip(packageID, versionID, packageZip);
+    const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
+    const packagePath = path.join(unzippedPath, directoryName);
 
-  //   const result = JSON.parse(depcheckOutput) as { dependencies: string[]; devDependencies: string[] };
+    const packageJsonPath = path.join(packagePath, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) {
+      throw new Error('package.json not found in the package zip.');
+    }
 
-  //   const unusedDeps = Array.isArray(result.dependencies) ? result.dependencies : [];
-  //   const unusedDevDeps = Array.isArray(result.devDependencies) ? result.devDependencies : [];
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
-  //   const eslintOutput = execSync(`npx eslint ${path.join(unzippedPath, directoryName)} --ext .js,.ts --fix --quiet`, {
-  //       encoding: 'utf-8',
-  //   });
+    const filesToMinify: string[] = [];
+    const topLevelFiles = fs.readdirSync(packagePath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
+    filesToMinify.push(...topLevelFiles.map(file => path.join(packagePath, file)));
 
-  //   const usedRequires = new Set();
-  //   const requireRegex = /\brequire\(['"`](.*?)['"`]\)/g;
-    
-  //   eslintOutput.split('\n').forEach((line) => {
-  //       let match;
-  //       while ((match = requireRegex.exec(line)) !== null) {
-  //           usedRequires.add(match[1]);
-  //       }
-  //   });
-    
-  //   const packageJsonPath = path.join(path.join(unzippedPath, directoryName), 'package.json');
-  //   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8')) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+    const srcDir = path.join(packagePath, 'src');
+    if (fs.existsSync(srcDir)) {
+      const srcFiles = fs.readdirSync(srcDir).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
+      filesToMinify.push(...srcFiles.map(file => path.join(srcDir, file)));
+    }
 
-  //   for (const dep of unusedDeps) {
-  //       if (!usedRequires.has(dep)) {
-  //           delete packageJson.dependencies[dep];
-  //       }
-  //   }
 
-  //   for (const dep of unusedDevDeps) {
-  //     delete packageJson.devDependencies[dep];
-  //   }
+    for (const filePath of filesToMinify) {
+      await esbuild.build({
+        entryPoints: [filePath],
+        outfile: filePath,
+        minify: true,
+        bundle: false,
+        external: Object.keys(packageJson.dependencies || {}),
+      });
+    }
 
-  //   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-  //   const zippedPackage = zipPackage(unzippedPath);
-  //   fs.rmSync(unzippedPath, { recursive: true, force: true });
-  //   await writePackageZip(packageID, versionID, zippedPackage);
-  // } catch (err: unknown) {
-  //   throw new Error(err as string);
-  // }
-  await writePackageZip(packageID, versionID, packageZip);
+    const zippedPackage = zipPackage(unzippedPath);
+    fs.rmSync(unzippedPath, { recursive: true, force: true });
+    await writePackageZip(packageID, versionID, zippedPackage);
+  } catch (err: unknown) {
+    throw new Error(err as string);
+  }
 }
 
 /**
@@ -193,7 +182,6 @@ export async function debloatPackageZip(packageID: number, versionID: number, pa
 export async function getPackageJson(packageID: number, versionID: number): Promise<any> {
   try {
     const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
-    console.log(unzippedPath, directoryName);
     const packageJsonPath = path.join(path.join(unzippedPath, directoryName), 'package.json');
     const packageJson = fs.readFileSync(packageJsonPath, 'utf-8');
     fs.rmSync(unzippedPath, { recursive: true, force: true });
@@ -203,7 +191,6 @@ export async function getPackageJson(packageID: number, versionID: number): Prom
     throw new Error(err as string);
   }
 }
-
 
 /**
  * Extracts the README file from an unzipped package directory.
@@ -232,12 +219,8 @@ export async function extractReadme(
       throw new Error(`Unzipped directory not found: ${unzippedPath}`);
     }
 
-    // Read the directory contents
-    const files = fs.readdirSync(unzippedPath);
-
     // Look for README files
     const readmePath = recursiveFindFile(targetPath, /^README(\.md|\.txt)?$/i);
-    console.log(`Files in unzipped directory:`, files);
     if (!readmePath) {
       return null; // No README file found
     }

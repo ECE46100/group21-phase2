@@ -6,7 +6,7 @@ on:
       - main
 jobs:
   build:
-    if: github.repository == 'ECE46100/group21-phase2' && github.repository != 'ECE46100/group21-phase2'
+    if: github.repository == 'ECE46100/group21-phase2'
     name: deploy
     runs-on: ubuntu-latest
       
@@ -15,7 +15,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
-          
+      
+      - name: Setup Node.js (backend)
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.18.1
+      
       - name: install dependencies (backend)
         run: npm install
         working-directory: backend
@@ -31,7 +36,13 @@ jobs:
       - name: build backend
         run: npm run build
         working-directory: backend
-
+        
+      - name: build frontend
+        run: npm run build
+        env:
+          CI: false
+        working-directory: frontend
+        
       - name: build phase1 handoff
         run: npx tsc
         working-directory: backend/group21-phase1-handoff
@@ -70,7 +81,7 @@ jobs:
             echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env
             echo AWS_REGION='us-east-2' >> .env
             echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
-
+            echo JWT_SECRET=${{ secrets.JWT_SECRET }} >> .env
             cd ../frontend
             # npm install
             touch .env
@@ -83,12 +94,14 @@ jobs:
             tmux new-session -d -s backend
             tmux send-keys -t backend "npm run start" C-m
 
-            # cd ../frontend
-            # if tmux has-session -t frontend 2>/dev/null; then
-            #   tmux kill-session -t frontend
-            # fi
-            # tmux new-session -d -s frontend
-            # tmux send-keys -t frontend "npm run start" C-m
+            sleep 30
+            
+            cd ../frontend
+            if tmux has-session -t frontend 2>/dev/null; then
+              tmux kill-session -t frontend
+            fi
+            tmux new-session -d -s frontend
+            tmux send-keys -t frontend "npx serve -s build -l tcp://0.0.0.0:4000" C-m
             '
 
           
