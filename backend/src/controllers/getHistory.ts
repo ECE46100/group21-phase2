@@ -6,6 +6,13 @@ const packageHistorySchema = z.object({
     Name: z.string(), // Replace ID with Name
 });
 
+/**
+ * Function to get the history of a package
+ * @param req : Request
+ * @param res : Response
+ * @param action : string
+ * @returns 200 if the history was retrieved
+ */
 export default async function getHistory(req: Request, res: Response, action: string) {
   const { name } = req.params;
   if (!name) {
