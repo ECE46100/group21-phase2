@@ -3,7 +3,6 @@ import s3Client from '../../src/S3';
 import AdmZip from 'adm-zip';
 import fs from 'fs';
 import path from 'path';
-import { extract } from 'tar';
 
 jest.mock('../../src/S3');
 jest.mock('adm-zip');
@@ -130,18 +129,4 @@ describe('PackageFileUtils', () => {
       await expect(packageFileUtils.readPackageZip(packageID, versionID)).rejects.toThrow();
     });
   });
-
-  // describe('writeZipFromTar', () => {
-  //   it('should write a zip file from a tar file', async () => {
-  //     const tar = Buffer.from('testtar');
-
-  //     fs.writeFileSync = jest.fn();
-  //     fs.rmSync = jest.fn();
-
-  //     jest.spyOn(fs, 'mkdirSync');
-  //     jest.spyOn(fs, 'writeFileSync');
-  //     jest.spyOn(fs, 'rmSync');
-  //     jest.spyOn(tar, 'extract').mockResolvedValue(undefined);
-  //   });
-  // });
 });
