@@ -70,7 +70,7 @@ jobs:
             echo AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_KEY }} >> .env
             echo AWS_REGION='us-east-2' >> .env
             echo GITHUB_TOKEN=${{ secrets.GH_TOKEN }} >> .env
-
+            echo JWT_SECRET=${{ secrets.JWT_SECRET }} >> .env
             cd ../frontend
             # npm install
             touch .env
