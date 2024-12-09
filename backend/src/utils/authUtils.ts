@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const { JWT_SECRET, CI_ON } = process.env;
 
-if (!CI_ON && !JWT_SECRET || typeof JWT_SECRET !== 'string') {
+if (!CI_ON && (!JWT_SECRET || typeof JWT_SECRET !== 'string')) {
   throw new Error('Missing JWT Secret');
 }
 

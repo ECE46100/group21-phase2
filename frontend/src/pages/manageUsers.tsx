@@ -246,8 +246,11 @@ const ManageUsers: React.FC = () => {
         <div style={{ maxWidth: '700px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
           <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Username:</label>
+              <label htmlFor="username" style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                Username:
+              </label>
               <input
+                id="username"
                 type="text"
                 value={newUsername}
                 onChange={(e) => setNewUsername(e.target.value)}
@@ -256,8 +259,11 @@ const ManageUsers: React.FC = () => {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Password:</label>
+              <label htmlFor="password" style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                Password:
+              </label>
               <input
+                id="password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -336,16 +342,27 @@ const ManageUsers: React.FC = () => {
         </div>
       )}
 
-
       {currentMode === Modes.DELETE_USER && (
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+        <div
+          style={{
+            maxWidth: '600px',
+            margin: '0 auto',
+            padding: '20px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            backgroundColor: '#f9f9f9',
+          }}
+        >
           <form
             onSubmit={(e) => e.preventDefault()}
             style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}
           >
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Username to Delete:</label>
+              <label htmlFor="usernameToDelete" style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                Username to Delete:
+              </label>
               <input
+                id="usernameToDelete"
                 type="text"
                 value={usernameToDelete}
                 onChange={(e) => setUsernameToDelete(e.target.value)}
@@ -373,14 +390,26 @@ const ManageUsers: React.FC = () => {
       )}
 
       {currentMode === Modes.CREATE_USER_GROUP && (
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
+        <div
+          style={{
+            maxWidth: '600px',
+            margin: '0 auto',
+            padding: '20px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            backgroundColor: '#f9f9f9',
+          }}
+        >
           <form
             onSubmit={(e) => e.preventDefault()}
             style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}
           >
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Group Name:</label>
+              <label htmlFor="groupName" style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                Group Name:
+              </label>
               <input
+                id="groupName"
                 type="text"
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
@@ -389,8 +418,11 @@ const ManageUsers: React.FC = () => {
               />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '5px' }}>Description (Optional):</label>
+              <label htmlFor="groupDescription" style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                Description (Optional):
+              </label>
               <input
+                id="groupDescription"
                 type="text"
                 value={newGroupDescription}
                 onChange={(e) => setNewGroupDescription(e.target.value)}

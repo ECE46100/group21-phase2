@@ -8,8 +8,8 @@ import { defineConfig } from '@playwright/test';
  * > npm playwright test e2e/someTestFile.spec.ts*/
 export default defineConfig({
   testDir: 'e2e',
-  timeout: 20 * 1000,
-  retries: 1,
+  timeout: 10 * 1000,
+  retries: 0,
   use: {
     baseURL: 'http://localhost:4000', // our projecy url
     headless: true, // don't show browser

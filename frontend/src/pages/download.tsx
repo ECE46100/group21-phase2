@@ -62,7 +62,7 @@ const DownloadPage: React.FC = () => {
           setSearchPerformed(true);
         } else if (response.status === 404) {
           setPackages([]);
-          alert('No packages found with the given regex.');
+          setError('No packages found with the given regex.');
         } else {
           setError('Search failed with an unknown error.');
         }
