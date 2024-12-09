@@ -61,24 +61,6 @@ export function zipPackage(unzippedPath: string): string {
   }
 }
 
-// /**
-//  * Check if a base64 encoded string is a valid zip file
-//  * @param packageZip: string
-//  * @returns true if valid, false otherwise
-//  */
-// export function isValidZip(packageZip: string): boolean {
-//   try {
-//     const decodedZip = Buffer.from(packageZip, 'base64');
-//     const zip = new AdmZip(decodedZip);
-    
-//     // Try to list the entries to ensure it's a valid ZIP
-//     zip.getEntries();
-//     return true;
-//   } catch {
-//     return false;
-//   }
-// }
-
 /**
  * Takes a base64 encoded string and writes it to the packages directory as a zip file
  * @param packageID: number

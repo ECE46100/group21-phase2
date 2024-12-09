@@ -1,3 +1,8 @@
+/**
+ * @file packageHistory.d.ts
+ * This file contains the types for the package history feature.
+ */
+
 declare module 'package-history-types' {  
     
     export interface HistoryPackageEntry { // need better naming

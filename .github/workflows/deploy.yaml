@@ -6,7 +6,7 @@ on:
       - main
 jobs:
   build:
-    if: github.repository == 'ECE46100/group21-phase2'
+    if: github.repository == 'ECE46100/group21-phase2' && github.repository != 'ECE46100/group21-phase2'
     name: deploy
     runs-on: ubuntu-latest
       

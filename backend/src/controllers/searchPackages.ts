@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "../utils/logUtils";
 import packageService from "../services/packageService";
+import userService from "../services/userService";
 
 const PackageQuerySchema = z.object({
   Name: z.string().default('*'),
@@ -46,8 +47,23 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
 export default async function searchPackages(req: Request, res: Response) {
   logger.info(`body: , ${JSON.stringify(req.body)}`);
   const requestOffset = req.query ? req.query.offset : null;
-  const splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
-  if (Number.isNaN(splitOffset[0]) || splitOffset.length > 2 || splitOffset.length === 0) {
+
+  //stupidly hardcoded way to account for negative offset
+
+  let splitOffset = typeof requestOffset === "string" ? requestOffset.split("-") : ["0", "0"];
+  if (splitOffset.length > 2 && splitOffset[2] == '') {
+    splitOffset[1] = '-' + splitOffset[1];
+    splitOffset[3] = '-' + splitOffset[3];
+  }
+  splitOffset = splitOffset.filter(item => item !== '');  //added for neg offset
+  const offsetNum = (Number(splitOffset[0]));
+
+  //console.log(splitOffset); // delete this
+  // test code snippet to show how the NaN works -- prev implementation did not work
+  //console.log(!isNaN(offsetNum) && splitOffset[0].trim() !== ''); // delete this
+  //(Number.isNaN(splitOffset[0]))
+
+  if (!(!isNaN(offsetNum) && splitOffset[0].trim() !== '') || splitOffset.length > 2 || splitOffset.length === 0) {
     res.status(400).send("Invalid request");
     return;
   }
@@ -60,14 +76,19 @@ export default async function searchPackages(req: Request, res: Response) {
     return;
   }
   try {
+    // Get the current user's group
+    const username = req.middleware.username;
+    const userGroup = await userService.getUserGroup(username);
+    
     const packageQueries = checkPackageQuery(req.body);
 
-    const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset);
+    const result = await PackageService.getPackagesBySemver(packageQueries, queryOffset, semverOffset, userGroup);
     // await PackageService.createHistory()
+    logger.info(`offset: ${result[0]}-${result[1]}`);
+    logger.info(`result: ${JSON.stringify(result[2])}`);
     res.header("offset", `${result[0]}-${result[1]}`);
     res.status(200).send(result[2]);
   } catch {
     res.status(400).send("Invalid request");
   }
 }
-

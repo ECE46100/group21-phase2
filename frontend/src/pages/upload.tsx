@@ -13,13 +13,29 @@ const UploadPage: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string>(''); // URL-based upload
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isSecret, setIsSecret] = useState<boolean>(false); // Secret checkbox state
+  const [groupName, setGroupName] = useState<string>(''); // User group name
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
       setAuthToken(token);
-    } else {
-      console.log('No token set while entering upload');
+
+      // Fetch user's group name from the server using the token
+      fetch('/user/group', {
+        headers: {
+          'X-Authorization': token,
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          } else {
+            throw new Error('Failed to fetch user group');
+          }
+        })
+        .then((data) => setGroupName(data.groupName))
+        .catch((error) => console.error('Error fetching group name:', error));
     }
   }, []);
 
@@ -64,6 +80,7 @@ process.exit(0)
 console.log('Failed')
 process.exit(1)
 }`,
+        accessLevel: isSecret ? groupName : 'public', // Set access level based on secret checkbox
       };
 
       if (file) {
@@ -174,6 +191,13 @@ process.exit(1)
               onChange={(e) => setDebloat(e.target.checked)}
             />
             Enable Debloat
+          </label>
+        </div>
+
+        <div>
+          <label>
+            <input type="checkbox" checked={isSecret} onChange={(e) => setIsSecret(e.target.checked)} />
+            Mark as Secret (Accessible only by group: {groupName || 'Fetching...'})
           </label>
         </div>
 
