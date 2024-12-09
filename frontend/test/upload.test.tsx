@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 import UploadPage from '../src/pages/upload'; // Adjust the path if necessary
@@ -7,34 +7,23 @@ import UploadPage from '../src/pages/upload'; // Adjust the path if necessary
 beforeEach(() => {
   jest.resetAllMocks();
   localStorage.clear();
-  global.fetch = jest.fn();
   localStorage.setItem('authToken', 'mockAuthToken123');
+  localStorage.setItem('userName', 'testuser');
+
+  // Mock fetch globally for this test suite
+  global.fetch = jest.fn();
+  jest.spyOn(window, 'alert').mockImplementation(() => {}); // Mock alert
 });
-jest.spyOn(window, 'alert').mockImplementation(() => {}); // Mock alert
 
-describe('UploadPage Component', () => {
-  test('renders the upload form', () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
-    render(
-      <MemoryRouter>
-        <UploadPage />
-      </MemoryRouter>
-    );
+describe('UploadPage Component with Mocked useEffect and useState', () => {
 
-    expect(screen.getByText('Upload a Package')).toBeInTheDocument();
-    expect(screen.getByLabelText('Package Name:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Upload ZIP File:')).toBeInTheDocument();
-    expect(screen.getByLabelText('Or Provide URL for the Package:')).toBeInTheDocument();
-    expect(screen.getByText('Upload Package')).toBeInTheDocument();
-  });
+  test('sets groupName and renders correctly without errors', async () => {
+    const mockGroupName = 'mockGroupName';
 
-  test('handles uploading a ZIP file successfully', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
+    // Mock the fetch call for `/user/group`
     (fetch as jest.Mock).mockResolvedValueOnce({
-      status: 201,
-      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
     });
 
     render(
@@ -42,6 +31,36 @@ describe('UploadPage Component', () => {
         <UploadPage />
       </MemoryRouter>
     );
+
+    // Wait for the useEffect to resolve and verify groupName is displayed
+    await waitFor(() => {
+      const nameElement = screen.getAllByText((content, element) =>
+        element?.textContent?.includes(`Mark as Secret (Accessible only by group: ${mockGroupName})`) || false
+      )[0];
+      expect(nameElement).toBeInTheDocument();
+    });
+  });
+
+  
+  test('handles uploading a ZIP file successfully', async () => {
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
+
+    render(
+      <MemoryRouter>
+        <UploadPage />
+      </MemoryRouter>
+    );
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 201,
+      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+    });
 
     fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
 
@@ -59,12 +78,13 @@ describe('UploadPage Component', () => {
     });
   });
 
-  test('handles providing a URL for upload successfully', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
+  test('handles providing a URL for upload successfully with isSecret checkbox checked', async () => {
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
     (fetch as jest.Mock).mockResolvedValueOnce({
-      status: 201,
-      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
     });
 
     render(
@@ -73,10 +93,18 @@ describe('UploadPage Component', () => {
       </MemoryRouter>
     );
 
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 201,
+      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+    });
+
     fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
     fireEvent.change(screen.getByLabelText('Or Provide URL for the Package:'), {
       target: { value: 'https://example.com/package.zip' },
     });
+
+    const isSecretCheckbox = screen.getByLabelText(/Mark as Secret/);
+    fireEvent.click(isSecretCheckbox); // Mark as secret
 
     fireEvent.click(screen.getByText('Upload Package'));
 
@@ -86,14 +114,19 @@ describe('UploadPage Component', () => {
   });
 
   test('displays error when neither ZIP file nor URL is provided', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
+
     render(
       <MemoryRouter>
         <UploadPage />
       </MemoryRouter>
     );
-
     fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
 
     fireEvent.click(screen.getByText('Upload Package'));
@@ -103,9 +136,45 @@ describe('UploadPage Component', () => {
     });
   });
 
+  test('handles error when upload fails', async () => {
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
+    render(
+      <MemoryRouter>
+        <UploadPage />
+      </MemoryRouter>
+    );
+
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 400,
+    });
+
+
+    fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
+    fireEvent.change(screen.getByLabelText('Or Provide URL for the Package:'), {
+      target: { value: 'https://example.com/package.zip' },
+    });
+
+    fireEvent.click(screen.getByText('Upload Package'));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Upload failed: Missing fields or invalid data.');
+    });
+  });
+
   test('displays error for non-ZIP file uploads', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
     render(
       <MemoryRouter>
         <UploadPage />
@@ -128,28 +197,107 @@ describe('UploadPage Component', () => {
 
   });
 
-  test('handles error when upload fails', async () => {
-    localStorage.setItem('authToken', 'mockAuthToken123');
-    localStorage.setItem('userName', 'testuser');
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      status: 400,
-    });
+  test('handles providing a URL for upload successfully with isSecret checkbox checked', async () => {
+    const mockGroupName = 'mockGroupName';
 
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
     render(
       <MemoryRouter>
         <UploadPage />
       </MemoryRouter>
     );
 
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 201,
+      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+    });
+
+
     fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
     fireEvent.change(screen.getByLabelText('Or Provide URL for the Package:'), {
       target: { value: 'https://example.com/package.zip' },
     });
 
+    const isSecretCheckbox = screen.getByLabelText(/Mark as Secret/);
+    fireEvent.click(isSecretCheckbox); // Mark as secret
+
     fireEvent.click(screen.getByText('Upload Package'));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Upload failed: Missing fields or invalid data.');
+      expect(window.alert).toHaveBeenCalledWith('Package uploaded successfully!');
+    });
+  });
+
+  test('handles uploading a ZIP file successfully with isSecret checkbox unchecked', async () => {
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
+    render(
+      <MemoryRouter>
+        <UploadPage />
+      </MemoryRouter>
+    );
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 201,
+      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+    });
+
+
+    fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
+
+    const file = new File(['dummy content'], 'example.zip', { type: 'application/zip' });
+    const fileInput = screen.getByLabelText('Upload ZIP File:') as HTMLInputElement;
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    expect(fileInput.files![0]).toBe(file);
+    expect(fileInput.files!.length).toBe(1);
+
+    fireEvent.click(screen.getByText('Upload Package'));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Package uploaded successfully!');
+    });
+  });
+
+  test('handles providing a URL for upload successfully with isSecret checkbox checked', async () => {
+    const mockGroupName = 'mockGroupName';
+
+    // Mock the fetch call for `/user/group`
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ groupName: mockGroupName }),
+    });
+    
+    render(
+      <MemoryRouter>
+        <UploadPage />
+      </MemoryRouter>
+    );
+    
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      status: 201,
+      json: async () => [{ ID: '1', Name: 'example-package', Version: '1.0.0' }],
+    });
+    fireEvent.change(screen.getByLabelText('Package Name:'), { target: { value: 'example-package' } });
+    fireEvent.change(screen.getByLabelText('Or Provide URL for the Package:'), {
+      target: { value: 'https://example.com/package.zip' },
+    });
+
+    const isSecretCheckbox = screen.getByLabelText(/Mark as Secret/);
+    fireEvent.click(isSecretCheckbox); // Mark as secret
+
+    fireEvent.click(screen.getByText('Upload Package'));
+
+    await waitFor(() => {
+      expect(window.alert).toHaveBeenCalledWith('Package uploaded successfully!');
     });
   });
 });
