@@ -1,9 +1,0 @@
-[2024-12-08 18:00:25] INFO: body: , {"Name":"test-package","Version":"1.0.0","Content":"some content"}
-[2024-12-08 18:00:25] INFO: body: , {"Name":"test-package","Version":"1.0.0","Content":"some content"}
-[2024-12-08 18:00:25] INFO: body: , {"Name":"test-package","Version":"1.0.0","Content":"some content"}
-[2024-12-08 18:00:25] ERROR: Error writing package
-[2024-12-08 18:00:25] INFO: body: , {"URL":"http://example.com/package.tar"}
-[2024-12-08 18:00:25] INFO: body: , {"URL":"http://example.com/package.tar"}
-[2024-12-08 18:00:25] INFO: body: , {"URL":"http://example.com/package.tar"}
-[2024-12-08 18:00:25] ERROR: Error writing zip
-[2024-12-08 18:00:25] INFO: body: , {"invalidField":"test"}

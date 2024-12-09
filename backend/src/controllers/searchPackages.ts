@@ -2,7 +2,6 @@ import PackageService from "../services/packageService";
 import { Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "../utils/logUtils";
-import packageService from "../services/packageService";
 import userService from "../services/userService";
 
 const PackageQuerySchema = z.object({
@@ -57,11 +56,6 @@ export default async function searchPackages(req: Request, res: Response) {
   }
   splitOffset = splitOffset.filter(item => item !== '');  //added for neg offset
   const offsetNum = (Number(splitOffset[0]));
-
-  //console.log(splitOffset); // delete this
-  // test code snippet to show how the NaN works -- prev implementation did not work
-  //console.log(!isNaN(offsetNum) && splitOffset[0].trim() !== ''); // delete this
-  //(Number.isNaN(splitOffset[0]))
 
   if (!(!isNaN(offsetNum) && splitOffset[0].trim() !== '') || splitOffset.length > 2 || splitOffset.length === 0) {
     res.status(400).send("Invalid request");

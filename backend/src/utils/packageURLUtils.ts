@@ -4,21 +4,15 @@ import { AxiosResponse } from "axios";
 import dotenv from "dotenv";
 import semver from "semver";
 import { PackageUrlObject, NPMResponse, GitHubResponse, GitHubPackageJson, PackageJsonFields } from "package-types";
-import fs from "fs";
-import path from "path";
-import { extract } from "tar";
-import os from "os";
-import { Readable } from "stream";
 dotenv.config();
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-if (!GITHUB_TOKEN) {
+const { GITHUB_TOKEN, CI_ON} = process.env;
+if (!CI_ON && !GITHUB_TOKEN) {
   throw new Error('Missing GitHub Token');
 }
 
 export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
-
   if (parsedUrl.hostname.includes('github.com')) {
     return await handleGitHubUrl(parsedUrl);
   } else if (parsedUrl.hostname.includes('npmjs.com')) {
@@ -140,7 +134,6 @@ async function getLatestTag(owner: string, repo: string): Promise<string | null>
     if (response.data.length === 0) {
       return null;
     }
-
     return response.data[0].name;
   } catch (err: unknown) {
     throw new Error((err as Error).message);

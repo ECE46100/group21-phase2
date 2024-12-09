@@ -1,7 +1,7 @@
 import PackageService from "../../src/services/packageService";
 import { Package } from "../../src/models/package";
 import { Version } from "../../src/models/version";
-import { GroupedCountResultItem } from "sequelize";
+import { GroupedCountResultItem, Op } from "sequelize";
 
 jest.mock("../../src/models/package");
 jest.mock("../../src/models/version");
@@ -127,16 +127,17 @@ describe("PackageService", () => {
       expect(result).toBe(null);
     });
   });
-
-  describe("getPackagesBySemver", () => {
-const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
+  
+  const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
     Array.from({ length: count }, (_, i) => ({
       ID: baseID + i,
       packageID: 1,
-      version: 1.${minorVersion}.${i},
+      version: `1.${minorVersion}.${i}`,
       createdAt: new Date(),
       accessLevel: "public",
   }));
+
+  describe("getPackagesBySemver", () => {
 
     it("should handle less than 50 results total", async () => {
       const mockVersions = mockVersionRows(30, 0);
@@ -233,7 +234,7 @@ const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
     it("should throw an error if the package creation fails", async () => {
       jest.spyOn(Package, "create").mockRejectedValue("error");
 
-      await expect(PackageService.createPackage(mockPackage)).rejects.toThrowError("error");
+      await expect(PackageService.createPackage(mockPackage)).rejects.toThrow("error");
     });
   });
 
@@ -263,4 +264,29 @@ const mockVersionRows = (count: number, minorVersion: number, baseID = 1) =>
     });
   });
   
+  const regexResult = {
+    ID: "1",
+    Name: "testpackage",
+    Version: "1.0.0",
+  }
+
+  describe("getPackagesByRegex", () => {
+    it("should return all packages that match the regex", async () => {
+      jest.spyOn(Package, "findAll").mockResolvedValue([mockPackage] as Package[]);
+
+      const result = await PackageService.getPackagesByRegex("test", "public");
+      expect(Package.findAll).toHaveBeenCalledWith({ where: { name: { [Op.regexp]: "test" } }, order: [["createdAt", "ASC"]] });
+      expect(result).toEqual([regexResult]);
+    });
+  });
+
+  describe("updateReadme", () => {
+    it("should update the readme of a package", async () => {
+      jest.spyOn(Version, "update").mockResolvedValue([1]);
+
+      const result = await PackageService.updateReadme(1, "testreadme");
+      expect(Version.update).toHaveBeenCalledWith({ readme: "testreadme" }, { where: { ID: 1 } });
+      expect(result).toBe(undefined);
+    });
+  });
 });
