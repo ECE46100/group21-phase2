@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import { extract } from 'tar';
-import { execSync } from 'child_process';
+import esbuild from 'esbuild';
 import s3Client from '../S3';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
@@ -136,8 +136,35 @@ export async function debloatPackageZip(packageID: number, versionID: number, pa
   try {
     await writePackageZip(packageID, versionID, packageZip);
     const [unzippedPath, directoryName] = await unzipPackage(packageID, versionID);
-    
-    // debloat here
+    const packagePath = path.join(unzippedPath, directoryName);
+
+    const packageJsonPath = path.join(packagePath, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) {
+      throw new Error('package.json not found in the package zip.');
+    }
+
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+
+    const filesToMinify: string[] = [];
+    const topLevelFiles = fs.readdirSync(packagePath).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
+    filesToMinify.push(...topLevelFiles.map(file => path.join(packagePath, file)));
+
+    const srcDir = path.join(packagePath, 'src');
+    if (fs.existsSync(srcDir)) {
+      const srcFiles = fs.readdirSync(srcDir).filter(file => file.endsWith('.js') || file.endsWith('.ts'));
+      filesToMinify.push(...srcFiles.map(file => path.join(srcDir, file)));
+    }
+
+
+    for (const filePath of filesToMinify) {
+      await esbuild.build({
+        entryPoints: [filePath],
+        outfile: filePath,
+        minify: true,
+        bundle: false,
+        external: Object.keys(packageJson.dependencies || {}),
+      });
+    }
 
     const zippedPackage = zipPackage(unzippedPath);
     fs.rmSync(unzippedPath, { recursive: true, force: true });
