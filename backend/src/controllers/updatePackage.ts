@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { Request } from 'express-serve-static-core';
 import PackageService from '../services/packageService';
 import uploadUrlHandler from '../utils/packageURLUtils';
-import { writePackageZip, writeZipFromTar, extractReadme, getPackageJson } from '../utils/packageFileUtils';
+import { writePackageZip, writeZipFromTar, extractReadme, getPackageJson, debloatPackageZip } from '../utils/packageFileUtils';
 import { z } from 'zod';
 import { logger } from '../utils/logUtils';
 import { PackageJsonFields, PackageRating } from 'package-types';
@@ -132,8 +132,11 @@ export default async function updatePackage(req: Request, res: Response) {
       }
 
       // Save content to file system
-      await writePackageZip(packageID, createdVersionID, data.Content);
-
+      if (!data.debloat) {
+        await writePackageZip(packageID, createdVersionID, data.Content);
+      } else {
+        await debloatPackageZip(packageID, createdVersionID, data.Content);
+      }
 
       const readmeContent = await extractReadme(packageID, createdVersionID);
 
