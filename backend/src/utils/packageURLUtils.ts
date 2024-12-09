@@ -11,6 +11,11 @@ if (!CI_ON && !GITHUB_TOKEN) {
   throw new Error('Missing GitHub Token');
 }
 
+/**
+ * Entry point for handling package URLs
+ * @param packageUrl : string
+ * @returns package name, version, and tarball content
+ */
 export default async function uploadUrlHandler(packageUrl: string): Promise<PackageUrlObject> {
   const parsedUrl = new URL(packageUrl);
   if (parsedUrl.hostname.includes('github.com')) {
@@ -22,6 +27,11 @@ export default async function uploadUrlHandler(packageUrl: string): Promise<Pack
   }
 }
 
+/**
+ * Handle NPM URL
+ * @param parsedUrl : URL
+ * @returns package name, version, and tarball content
+ */
 async function handleNpmUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   const pathParts = parsedUrl.pathname.split('/').slice(1);
   let name = '';
@@ -62,6 +72,11 @@ async function handleNpmUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   }
 }
 
+/**
+ * Handle GitHub URL
+ * @param parsedUrl : URL
+ * @returns package name, version, and tarball content
+ */
 async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   const pathParts = parsedUrl.pathname.split('/').slice(1);
   let tag = null;
@@ -118,6 +133,12 @@ async function handleGitHubUrl(parsedUrl: URL): Promise<PackageUrlObject> {
   }
 }
 
+/**
+ * get latest tag for a gitub repo
+ * @param owner : string
+ * @param repo : string
+ * @returns the name of the latest tag, if found
+ */
 async function getLatestTag(owner: string, repo: string): Promise<string | null> {
   const GITHUB_API_URL = `https://api.github.com/repos/${owner}/${repo}/tags`;
 
@@ -140,6 +161,12 @@ async function getLatestTag(owner: string, repo: string): Promise<string | null>
   }
 }
 
+/**
+ * Gets the content of the tarball from a URL
+ * @param tarUrl : string
+ * @param headers : Record<string, string> (needed for github)
+ * @returns the tar contents in a buffer
+ */
 async function downloadTarUrl(tarUrl: string, headers?: Record<string, string>): Promise<Buffer> {
   const response = await axios.get(tarUrl, { 
     responseType: 'arraybuffer',

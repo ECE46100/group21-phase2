@@ -7,6 +7,12 @@ const userDeletionSchema = z.object({
     deleteName: z.string(),
   });
 
+/**
+ * Function to delete a user
+ * @param req : Request
+ * @param res : Response
+ * @returns 200 if the user was deleted
+ */
   export default async function deleteUser(req: Request, res: Response) {
     const validationResult = userDeletionSchema.safeParse(req.body);
     if (!validationResult.success) {

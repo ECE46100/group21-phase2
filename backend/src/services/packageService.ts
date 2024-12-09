@@ -9,24 +9,49 @@ import { Op, literal } from 'sequelize';
 import RE2 from "re2";
 
 class PackageService {
+  /**
+   * Get the package ID by name
+   * @param packageName : string
+   * @returns the id if found, null if not found
+   */
   public async getPackageID(packageName: string): Promise<number | null> {
     const packageObj = await Package.findOne({ where: { name: packageName } });
     return packageObj ? packageObj.ID : null;
   }
 
+  /**
+   * Get the package object by ID
+   * @param packageID : number
+   * @returns the package object if found, null if not found
+   */
   public async getPackageByID(packageID: number): Promise<Package | null> {
     return await Package.findByPk(packageID);
   }  
 
+  /**
+   * Get the package name by ID
+   * @param packageID : number
+   * @returns the name if found, null if not found
+   */
   public async getPackageName(packageID: number): Promise<string | null> {
     const packageObj = await Package.findByPk(packageID);
     return packageObj ? packageObj.name : null;
   }
   
+  /**
+   * Get the version object by ID
+   * @param versionID : number
+   * @returns the version object if found, null if not found
+   */
   public async getPackageVersion(versionID: number): Promise<Version | null> {
     return await Version.findByPk(versionID);
   }
 
+  /**
+   * Get all version objects by package ID (foreign key in version table)
+   * @param versionID : number
+   * @returns a list of all version objects
+   */
   public async getAllVersions(packageID: number): Promise<Version[]> {
     try {
       return await Version.findAll({ 
@@ -39,11 +64,25 @@ class PackageService {
     }
   }  
 
+  /**
+   * Get the version ID by packageID and version
+   * @param packageID : number
+   * @param version : string
+   * @returns the id if found, null if not found
+   */
   public async getVersionID(packageID: number, version: string): Promise<number | null> {
     const versionObj = await Version.findOne({ where: { packageID, version } });
     return versionObj ? versionObj.ID : null;
   }
 
+  /**
+   * Get the matching versions by package queries
+   * @param packageQueries : list of package queries (name and semver)
+   * @param queryOffset : offset in db
+   * @param semverOffset : offset within db page
+   * @param userGroup : user group
+   * @returns the matching packages
+   */
   public async getPackagesBySemver(packageQueries: PackageQuery[], queryOffset: number, semverOffset: number, userGroup: string): Promise<[number, number, PackageSearchResult[]]> {
     const queryMetadata = new Map<number, PackageQuery>();
     
@@ -116,6 +155,10 @@ class PackageService {
     return result;
   }
 
+  /**
+   * Create a new package
+   * @param packageObj : package object
+   */
   public async createPackage(packageObj: PackageCreationAttributes): Promise<undefined> {
     try {
       await Package.create(packageObj);
@@ -125,6 +168,12 @@ class PackageService {
     }
   }
 
+  /**
+   * Searches all package names and readmes for a regex
+   * @param regex :  regex to search for
+   * @param userGroup : user group
+   * @returns the matching packages
+   */
   public async getPackagesByRegex(regex: string, userGroup: string): Promise<PackageSearchResult[]> {
     const regexObj = new RE2(regex, "i"); // Case-insensitive regex
   
@@ -208,6 +257,11 @@ class PackageService {
     }
   }
 
+  /**
+   * Updates the readme content of a version
+   * @param versionID : version ID
+   * @param readmeContent : new readme content
+   */
   public async updateReadme(versionID: number, readmeContent: string) {
     await Version.update(
       { readme: readmeContent },
@@ -215,6 +269,11 @@ class PackageService {
     );
   }
   
+  /**
+   * Updates the access level of a version
+   * @param versionID : version ID
+   * @param accessLevel : new access level
+   */
   public async createVersion(versionObj: VersionCreationAttributes): Promise<undefined> {
     if (await Version.findOne({ where: { version: versionObj.version, packageID: versionObj.packageID } })) {
       throw new Error("Version already exists");
@@ -228,6 +287,11 @@ class PackageService {
     }
   }
 
+  /**
+   * Updates the URL of a version
+   * @param versionID : version ID
+   * @param accessLevel : new URL
+   */
   public async updatePackageUrl(versionID: number, packageUrl: string): Promise<undefined> {
     try {
       await Version.update({ packageUrl: packageUrl }, { where: { ID: versionID } });
@@ -237,6 +301,12 @@ class PackageService {
     }
   }
 
+  /**
+   * Create a history object for a version
+   * @param userName : user who performed the action
+   * @param versionID : version ID
+   * @param action : action performed
+   */
   public async createHistory(userName:string, versionID: number, action:string): Promise<undefined> {
     console.log(`in createHistory, user:${userName}, versionID:${versionID}, action:${action}`);
     try {

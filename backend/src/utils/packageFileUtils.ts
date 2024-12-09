@@ -1,4 +1,3 @@
-// Zip files stored as packageID-versionID
 import fs from 'fs';
 import path from 'path';
 import AdmZip from 'adm-zip';
@@ -172,7 +171,6 @@ export async function debloatPackageZip(packageID: number, versionID: number, pa
   } catch (err: unknown) {
     throw new Error(err as string);
   }
-  // await writePackageZip(packageID, versionID, packageZip);
 }
 
 /**
