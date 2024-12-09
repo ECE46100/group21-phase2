@@ -1,3 +1,6 @@
+/**
+ * @fileoverview This file contains the Package model, which represents the packages table in the database.
+ */
 import { Model, DataTypes } from 'sequelize';
 import sequelize from '../db';
 import { PackageAttributes, PackageCreationAttributes } from 'package-types';

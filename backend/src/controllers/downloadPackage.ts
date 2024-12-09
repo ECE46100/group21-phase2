@@ -2,6 +2,12 @@ import { Request, Response } from 'express';
 import PackageService from '../services/packageService';
 import { readPackageZip } from '../utils/packageFileUtils';
 
+/**
+ * Function to download a package
+ * @param req : Request
+ * @param res : Response
+ * @returns 200 if the package was downloaded
+ */
 export default async function downloadPackage(req: Request, res: Response) {
   const id = req.params.id;
 

@@ -18,10 +18,20 @@ const AuthSchema = z.object({
 
 type AuthSchema = z.infer<typeof AuthSchema>;
 
+/**
+ * Function to check if the request is of type AuthSchema
+ * @param authRequest 
+ * @returns 
+ */
 function isAuthSchema(authRequest: unknown): authRequest is AuthSchema {
   return AuthSchema.safeParse(authRequest).success;
 }
 
+/**
+ * Function to authenticate the user
+ * @param req : Request
+ * @param res : Response
+ */
 export default async function authenticate(req: Request, res: Response) {
   const authRequest: unknown = req.body;
   if (!isAuthSchema(authRequest)) {

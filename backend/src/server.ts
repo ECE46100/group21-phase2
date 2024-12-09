@@ -1,9 +1,12 @@
+/**
+ * @fileoverview This file is the entry point for the backend server.
+ */
+
 import sequelize from "./db";
 import router from "./app";
 import express from "express";
 import resetBucket from "./utils/resetUtil";
 import UserService from "./services/userService";
-// import PackageService from "./services/packageService";
 import { requestLogger } from "./utils/logUtils";
 
 const app = express();

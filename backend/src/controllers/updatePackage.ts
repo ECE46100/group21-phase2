@@ -27,6 +27,12 @@ const ContentUpdateSchema = z.object({
   data: DataSchema,
 });
 
+/**
+ * Function to update a package
+ * @param req : Request
+ * @param res : Response
+ * @returns : 200 if the package was updated
+ */
 export default async function updatePackage(req: Request, res: Response) {
   // Validate the request body against the schema
 
