@@ -1,3 +1,6 @@
+/**
+ * @fileoverview This file contains the database connection for the application.
+ */
 import { Sequelize } from "sequelize";
 import dotenv from 'dotenv';
 dotenv.config();

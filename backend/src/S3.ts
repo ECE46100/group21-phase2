@@ -1,3 +1,6 @@
+/**
+ * @fileoverview This file contains the S3 client configuration.
+ */
 import { S3Client } from "@aws-sdk/client-s3";
 import dotenv from "dotenv";
 dotenv.config();

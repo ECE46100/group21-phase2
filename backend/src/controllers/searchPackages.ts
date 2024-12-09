@@ -17,6 +17,11 @@ const PackageQuerySchema = z.object({
 
 type ValidPackageQuery = z.infer<typeof PackageQuerySchema>;
 
+/**
+ * Function to validate the package query
+ * @param query : unknown
+ * @returns : ValidPackageQuery[]
+ */
 function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   // const validSemVerRegex = /^(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?$/;
   const validSemVerRegex = /^(?:\*|(?:\^|~)?\d+\.\d+\.\d+(?:\s*-\s*\d+\.\d+\.\d+)?)$/; // allow wildcard '*'(when no version is specified)
@@ -43,6 +48,12 @@ function checkPackageQuery(query: unknown): ValidPackageQuery[] {
   return validatedPackageQuery;
 }
 
+/**
+ * Function to search for packages
+ * @param req : Request
+ * @param res : Response
+ * @returns : 200 if the packages were found
+ */
 export default async function searchPackages(req: Request, res: Response) {
   logger.info(`body: , ${JSON.stringify(req.body)}`);
   const requestOffset = req.query ? req.query.offset : null;

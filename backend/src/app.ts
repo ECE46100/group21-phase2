@@ -1,3 +1,6 @@
+/**
+ * @fileoverview This file contains the routes for the backend API.
+ */
 import { Router, Response } from 'express';
 import { Request } from 'express-serve-static-core';
 

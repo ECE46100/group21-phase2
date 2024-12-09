@@ -1,6 +1,5 @@
 /**
- * @file package.d.ts
- * This file contains the types for the package database model, version database model, and other types related to packages.
+ * @fileoverview This file contains the types for the package database model, version database model, and other types related to packages.
  */
 
 declare module 'package-types' {

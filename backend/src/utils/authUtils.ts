@@ -1,8 +1,16 @@
 import jwt from 'jsonwebtoken';
 import type { JwtPayload } from 'jsonwebtoken';
 import { hash, compare } from 'bcrypt';
+import dotenv from 'dotenv';
 
-const secret = 'secret'; // TODO: Replace with a path to a secret key
+dotenv.config();
+const { JWT_SECRET, CI_ON } = process.env;
+
+if (!CI_ON && (!JWT_SECRET || typeof JWT_SECRET !== 'string')) {
+  throw new Error('Missing JWT Secret');
+}
+
+const secret = JWT_SECRET ?? 'secret'; // default to 'secret' if not set (for CI)
 const saltRounds = 10;
 
 /**

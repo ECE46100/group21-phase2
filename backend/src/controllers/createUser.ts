@@ -12,6 +12,12 @@ const userCreationSchema = z.object({
     userGroup: z.string(),
   });
 
+/**
+ * Function to create a new user
+ * @param req : Request
+ * @param res : Response
+ * @returns 200 if the user was created
+ */
 export default async function createUser(req: Request, res: Response) {
     const validationResult = userCreationSchema.safeParse(req.body);
     if (!validationResult.success || validationResult.data.password=='' || validationResult.data.username=='') {
