@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PageLayout from './pageLayout';
 
 interface PackageMetadata {
-  ID: string;
+  ID: number; // Ensure ID is a number
   Name: string;
   Version: string;
 }
@@ -18,20 +18,16 @@ const UpdatePage: React.FC = () => {
   const [url, setUrl] = useState<string>(''); // URL for URL-based updates
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Pagination state
   const [offset, setOffset] = useState<number>(0);
   const [hasNextPage, setHasNextPage] = useState<boolean>(false);
-
   const [searchPerformed, setSearchPerformed] = useState<boolean>(false);
 
-  // Retrieve auth token from localStorage on component mount
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
       setAuthToken(token);
     } else {
-      console.log('No token set while entering update');
+      console.log('No token set while entering update page.');
     }
   }, []);
 
@@ -65,17 +61,16 @@ const UpdatePage: React.FC = () => {
         if (response.status === 200) {
           const data: PackageMetadata[] = await response.json();
           setPackages(data);
-          setHasNextPage(false); // Pagination is not applicable for regex searches
+          setHasNextPage(false);
           setSearchPerformed(true);
         } else if (response.status === 404) {
-          setPackages([]);
           alert('No packages found with the given regex.');
         } else {
           setError('Search failed with an unknown error.');
         }
       } else {
         const requestBody = [
-          { Name: searchTerm, Version: versionTerm ? versionTerm : '*' },
+          { Name: searchTerm, Version: versionTerm || '*' },
         ];
         const response = await fetch(`/packages?offset=${pageOffset}`, {
           method: 'POST',
@@ -121,7 +116,7 @@ const UpdatePage: React.FC = () => {
       const isZipFile = selectedFile.type === 'application/zip' || selectedFile.name.endsWith('.zip');
 
       if (!isZipFile) {
-        alert('Please select a ZIP file.');
+        alert('Please select a valid ZIP file.');
         e.target.value = '';
         setFile(null);
       } else {
@@ -144,14 +139,23 @@ const UpdatePage: React.FC = () => {
       return;
     }
 
+    if (file && url) {
+      alert('Please provide only one of either a ZIP file or a URL for the update.');
+      return;
+    }
+
     try {
+      console.log(`name : ${selectedPackage.Name}`);
       let payload: any = {
         metadata: {
           Name: selectedPackage.Name,
           Version: newVersion,
-          ID: selectedPackage.ID,
+          ID: Number(selectedPackage.ID),
         },
-        data: {},
+        data: {
+          Name: selectedPackage.Name,
+          debloat: debloat,
+        },
       };
 
       if (file) {
@@ -159,24 +163,16 @@ const UpdatePage: React.FC = () => {
           const reader = new FileReader();
           reader.onload = () => {
             if (typeof reader.result === 'string') {
-              resolve(reader.result.split(',')[1]);
+              resolve(reader.result.split(',')[1]); // Base64 encode
             }
           };
           reader.onerror = (error) => reject(error);
           reader.readAsDataURL(file);
         });
 
-        payload.data = {
-          Content: fileContent,
-          Name: selectedPackage.Name,
-          debloat: debloat,
-        };
+        payload.data.Content = fileContent;
       } else if (url) {
-        payload.data = {
-          URL: url,
-          Name: selectedPackage.Name,
-          debloat: debloat,
-        };
+        payload.data.URL = url;
       }
 
       const response = await fetch(`/package/${selectedPackage.ID}`, {
@@ -191,14 +187,14 @@ const UpdatePage: React.FC = () => {
       if (response.status === 200) {
         alert('Version updated successfully!');
       } else {
-        alert(await response.text());
+        const errorMsg = await response.text();
+        alert(`Error updating package: ${errorMsg}`);
       }
     } catch (error) {
       console.error('Error updating package:', error);
       alert('An error occurred while updating the package.');
     }
   };
-
   return (
     <PageLayout title="Update a Package">
       <form onSubmit={(e) => { e.preventDefault(); handleSearch(0); }} style={{ maxWidth: '500px', margin: '0 auto' }}>

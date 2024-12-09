@@ -82,7 +82,7 @@ const RatingPage: React.FC = () => {
           setSearchPerformed(true);
         } else if (response.status === 404) {
           setPackages([]);
-          alert('No packages found with the given regex.');
+          setError('No packages found with the given regex.');
         } else {
           setError('Search failed with an unknown error.');
         }
@@ -107,6 +107,8 @@ const RatingPage: React.FC = () => {
           setOffset(pageOffset);
           setHasNextPage(data.length > 0);
           setSearchPerformed(true);
+        } else if (response.status === 404) {
+          setError('No package found.')
         } else {
           setError('Search failed with an unknown error.');
         }
