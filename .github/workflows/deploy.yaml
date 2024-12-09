@@ -6,7 +6,7 @@ on:
       - main
 jobs:
   build:
-    if: github.repository == 'ECE46100/group21-phase2'
+    if: github.repository == 'ECE46100/group21-phase2' && github.repository != 'ECE46100/group21-phase2'
     name: deploy
     runs-on: ubuntu-latest
       
@@ -36,7 +36,11 @@ jobs:
       - name: build backend
         run: npm run build
         working-directory: backend
-
+        
+      - name: build frontend
+        run: npm run build
+        working-directory: frontend
+        
       - name: build phase1 handoff
         run: npx tsc
         working-directory: backend/group21-phase1-handoff
@@ -95,7 +99,7 @@ jobs:
               tmux kill-session -t frontend
             fi
             tmux new-session -d -s frontend
-            tmux send-keys -t frontend "npm run start" C-m
+            tmux send-keys -t frontend "npx serve -s build -l tcp://0.0.0.0:4000" C-m
             '
 
           
