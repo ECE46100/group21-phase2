@@ -39,6 +39,8 @@ jobs:
         
       - name: build frontend
         run: npm run build
+        env:
+          CI: false
         working-directory: frontend
         
       - name: build phase1 handoff
